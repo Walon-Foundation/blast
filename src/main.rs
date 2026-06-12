@@ -4,6 +4,9 @@ use clap:: {Parser, Subcommand};
 
 mod commands;
 mod config;
+mod runner;
+mod template;
+mod extractor;
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0", name = "blast", about = "API load tester and traffic generator")]
@@ -31,7 +34,8 @@ enum Command {
     Validate,
 }
 
-fn main() -> Result<()>{
+#[tokio::main]
+async fn main() -> Result<()>{
     let cli = Cli::parse();
 
     match cli.command {
@@ -40,7 +44,7 @@ fn main() -> Result<()>{
         },
 
         Command::Check => {
-            commands::check::run()?;
+            commands::check::run(&cli.config).await?;
         },
 
         Command::Validate => {

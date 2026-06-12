@@ -3,14 +3,14 @@ use std::{collections::HashMap, fs, path::{Path, PathBuf}};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BlastConfig {
     pub base_url:String,
-    pub header: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
     pub endpoints: Vec<Endpoint>
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Endpoint {
     pub name:          String,
     pub method:        String,
@@ -102,7 +102,7 @@ impl BlastConfig {
     fn template() -> Self {
         Self { 
             base_url: String::from("http://localhost:3000/") , 
-            header: Some(HashMap::from([(
+            headers: Some(HashMap::from([(
                 String::from("Content-Type"),
                 String::from("application/json")
             )])), 
