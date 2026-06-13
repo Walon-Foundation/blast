@@ -12,6 +12,8 @@ Describe your API once in a `blast.config.json` file, then hit every endpoint wi
 - **Status assertions** — declare the status code each endpoint should return; mismatches are reported as failures
 - **Latency reporting** — per-request latency in milliseconds
 - **Database seeding** — tag endpoints with `"seed"` and run `blast seed` to populate your database with N iterations of fake data, with configurable concurrency
+- **Load testing** — tag endpoints with `"run"` and fire `blast run` to send traffic at a fixed requests-per-second rate for a set duration, with live progress and p50/p95/p99/p999 latency output
+- **Setup phase** — declare a `setup` block to run authentication or warm-up requests once before a load test, with extracted values (e.g. tokens) automatically passed into every subsequent request
 - **CI friendly** — non-zero exit code when any endpoint fails, so it slots straight into a pipeline
 
 ## Installation
@@ -38,6 +40,9 @@ blast check
 
 # 4. Seed the database with 50 fake records, 5 at a time
 blast seed --count 50 --concurrency 5
+
+# 5. Fire 20 req/sec at tagged endpoints for 60 seconds
+blast run --rps 20 --duration 60
 ```
 
 Example `check` output:
@@ -62,6 +67,24 @@ seeding 10 iterations × 2 endpoints (concurrency: 1)
 all iterations passed
 ```
 
+Example `run` output:
+
+```
+  elapsed: 1s   sent: 20   success: 20   p99: 14ms
+  elapsed: 2s   sent: 40   success: 40   p99: 12ms
+  ...
+
+  Total requests:  600
+  Duration:        30s
+  Success rate:    100.0%
+
+  Latency
+    p50:   8ms
+    p95:   13ms
+    p99:   18ms
+    p999:  45ms
+```
+
 ## Commands
 
 | Command | Description |
@@ -70,6 +93,7 @@ all iterations passed
 | `blast check` | Hit every endpoint once, verify status codes, and report latency |
 | `blast validate` | Validate `blast.config.json` and report any issues |
 | `blast seed` | Run all endpoints tagged `"seed"` N times to populate a database with fake data |
+| `blast run` | Fire requests at a fixed rate for a set duration and report latency percentiles |
 
 All commands accept `--config <path>` to point at a different config location.
 
@@ -79,6 +103,13 @@ All commands accept `--config <path>` to point at a different config location.
 | --- | --- | --- |
 | `--count` | `10` | Number of seeding iterations to run |
 | `-j` / `--concurrency` | `1` | Maximum number of iterations running in parallel |
+
+### `blast run` options
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--rps` | `10` | Target requests per second |
+| `-d` / `--duration` | `30` | How long to run the load test, in seconds |
 
 ## Configuration
 
@@ -90,12 +121,28 @@ A `blast.config.json` looks like this:
   "headers": {
     "Content-Type": "application/json"
   },
+  "setup": [
+    {
+      "name": "login",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "body": {
+        "email": "admin@example.com",
+        "password": "Admin1234!"
+      },
+      "expect_status": 200,
+      "extract": {
+        "access_token": "data.access_token"
+      }
+    }
+  ],
   "endpoints": [
     {
       "name": "health check",
       "method": "GET",
       "path": "/health",
-      "expect_status": 200
+      "expect_status": 200,
+      "tags": ["check", "seed", "run"]
     },
     {
       "name": "register user",
@@ -105,20 +152,18 @@ A `blast.config.json` looks like this:
         "email": "{{fake.email}}",
         "password": "{{fake.password}}"
       },
-      "expect_status": 201
+      "expect_status": 201,
+      "tags": ["seed"]
     },
     {
-      "name": "login",
-      "method": "POST",
-      "path": "/api/v1/auth/login",
-      "body": {
-        "email": "test@example.com",
-        "password": "Seed1234!"
+      "name": "list users",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "headers": {
+        "Authorization": "Bearer {{access_token}}"
       },
       "expect_status": 200,
-      "extract": {
-        "access_token": "data.access_token"
-      }
+      "tags": ["run"]
     }
   ]
 }
@@ -130,7 +175,8 @@ A `blast.config.json` looks like this:
 | --- | --- | --- |
 | `base_url` | yes | Base URL prepended to every endpoint path |
 | `headers` | no | Headers sent with every request (endpoint headers override these) |
-| `endpoints` | yes | List of endpoints to hit, executed in order |
+| `endpoints` | yes | List of endpoints executed by `check`, `seed`, and `run` |
+| `setup` | no | Requests run once before a load test to bootstrap context (e.g. login to get a token) |
 
 ### Endpoint fields
 
@@ -177,8 +223,15 @@ Tags let you group endpoints so different commands target different subsets.
 ```
 
 - `blast seed` runs only endpoints that include the `"seed"` tag.
-- If **no** endpoint in the config has any tags, `blast seed` falls back to running all endpoints.
-- An endpoint can carry multiple tags (`["check", "seed"]`) and will be included whenever any of its tags match.
+- `blast run` runs only endpoints that include the `"run"` tag.
+- If **no** endpoint in the config has any tags, both commands fall back to running all endpoints.
+- An endpoint can carry multiple tags (`["seed", "run"]`) and will be included whenever any of its tags match.
+
+### Setup phase
+
+The optional `setup` array runs once before `blast run`, in order, before any load traffic is sent. It works exactly like a regular endpoint sequence — responses are parsed and `extract` rules populate a shared context that is then passed to every load-test request. If any setup step fails, blast aborts with an error rather than firing incorrect load.
+
+A typical use: log in once and extract an access token so that all subsequent load-test requests carry a valid `Authorization` header without each iteration needing to authenticate.
 
 ### Request chaining
 
