@@ -40,6 +40,15 @@ enum Command {
 
         #[arg(short = 'j', long, default_value = "1")]
         concurrency: usize
+    },
+
+    /// Fire loads at fixed request per second for a set duration and print out the response time
+    Run {
+        #[arg(long, default_value="10")]
+        rps: u32,
+
+        #[arg(long, short='d', default_value="30")]
+        duration:u64
     }
 }
 
@@ -62,6 +71,10 @@ async fn main() -> Result<()>{
 
         Command::Seed { count, concurrency } => {
             commands::seed::run(&cli.config, count, concurrency).await?;
+        },
+
+        Command::Run { rps, duration } => {
+            commands::run::run(&cli.config, rps, duration).await?;
         }
     }
 
