@@ -48,5 +48,20 @@
         "seed"
       ]
     }
+  ],
+  "setup": [
+    {
+      "name": "health check",
+      "method": "GET",
+      "path": "/health",
+      "headers": null,
+      "body": null,
+      "expect_status": 200,
+      "extract": null,
+      "tags": [
+        "check",
+        "seed"
+      ]
+    }
   ]
 }

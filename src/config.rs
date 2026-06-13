@@ -3,11 +3,14 @@ use std::{collections::HashMap, fs, path::{Path, PathBuf}};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::{extractor, runner};
+
 #[derive(Debug, Deserialize, Serialize, Clone )]
 pub struct BlastConfig {
     pub base_url:String,
     pub headers: Option<HashMap<String, String>>,
-    pub endpoints: Vec<Endpoint>
+    pub endpoints: Vec<Endpoint>,
+    pub setup: Option<Vec<Endpoint>>
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -94,11 +97,6 @@ impl BlastConfig {
         Ok(config)
     }
 
-    // pub fn load_from_cwd() -> Result<Self> {
-    //     let cwd = std::env::current_dir()
-    //         .context("could not determine current directory")?;
-    //     Self::load(&cwd)
-    // }
 
     fn template() -> Self {
         Self { 
@@ -107,6 +105,20 @@ impl BlastConfig {
                 String::from("Content-Type"),
                 String::from("application/json")
             )])), 
+            setup: Some(
+               vec![
+                   Endpoint{
+                       name:          "health check".to_string(),
+                       method:        "GET".to_string(),
+                       path:          "/health".to_string(),
+                       headers:       None,
+                       body:          None,
+                       expect_status: Some(200),
+                       extract:       None,
+                       tags:          Some(vec!["check".to_string(), "seed".to_string() ])
+                   }
+               ]
+            ),
             endpoints: vec![
                 Endpoint {
                     name:          "health check".to_string(),
@@ -183,6 +195,34 @@ impl BlastConfig {
         }
         
         Ok(())
+    }
+
+    pub async fn load_setup(&self, client: &reqwest::Client) -> Result<HashMap<String, String>>{
+        let mut ctx = HashMap::new();
+
+        let setup_endpoint = match &self.setup {
+            Some(s) => s,
+            None => return Ok(ctx)
+        };
+
+        for endpoint in setup_endpoint {
+            let result = runner::execute(client, endpoint, &self.base_url, &ctx).await;
+
+            if !result.passed {
+                anyhow::bail!(
+                    "setup endpoint \"{}\" failed with status {} — cannot continue\nresponse: {}",
+                    endpoint.name,
+                    result.actual_status,
+                    result.error.unwrap_or_default()
+                )
+            };
+
+            if let (Some(rules), Some(body)) = (&endpoint.extract, &result.body){
+                extractor::extract(body, rules, &mut ctx);
+            }
+        }
+
+        Ok(ctx)
     }
 
 
