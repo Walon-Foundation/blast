@@ -32,6 +32,15 @@ enum Command {
 
     /// Validate blast.config.json and report issues
     Validate,
+
+    /// Run all endpoint with tags "seed" with fake fresh data
+    Seed {
+        #[arg(long, default_value = "10")]
+        count: u32,
+
+        #[arg(short = 'j', long, default_value = "1")]
+        concurrency: usize
+    }
 }
 
 #[tokio::main]
@@ -49,6 +58,10 @@ async fn main() -> Result<()>{
 
         Command::Validate => {
             commands::validate::run(&cli.config)?;
+        },
+
+        Command::Seed { count, concurrency } => {
+            commands::seed::run(&cli.config, count, concurrency).await?;
         }
     }
 

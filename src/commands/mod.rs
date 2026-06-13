@@ -1,3 +1,4 @@
 pub mod init;
 pub mod check;
 pub mod validate;
+pub mod seed;
