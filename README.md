@@ -13,12 +13,19 @@ Describe your API once in a `blast.config.json` file, then hit every endpoint wi
 - **Latency reporting** — per-request latency in milliseconds
 - **Database seeding** — tag endpoints with `"seed"` and run `blast seed` to populate your database with N iterations of fake data, with configurable concurrency
 - **Load testing** — tag endpoints with `"run"` and fire `blast run` to send traffic at a fixed requests-per-second rate for a set duration, with live progress and p50/p95/p99/p999 latency output
+- **Stress testing** — tag endpoints with `"stress"` and run `blast stress` to ramp from a minimum to a maximum RPS in configurable steps, automatically detecting the breaking point where latency or error rate exceeds thresholds
 - **Setup phase** — declare a `setup` block to run authentication or warm-up requests once before a load test, with extracted values (e.g. tokens) automatically passed into every subsequent request
 - **CI friendly** — non-zero exit code when any endpoint fails, so it slots straight into a pipeline
 
 ## Installation
 
-Build from source (requires a recent Rust toolchain):
+### Pre-built binaries
+
+Download the latest release for your platform from the [GitHub Releases](https://github.com/Walon-Foundation/blast/releases) page. Binaries are available for Linux, macOS, and Windows on both x86_64 and arm64.
+
+### Build from source
+
+Requires a recent stable Rust toolchain:
 
 ```sh
 git clone https://github.com/Walon-Foundation/blast.git
@@ -43,6 +50,9 @@ blast seed --count 50 --concurrency 5
 
 # 5. Fire 20 req/sec at tagged endpoints for 60 seconds
 blast run --rps 20 --duration 60
+
+# 6. Ramp from 10 to 100 req/sec in steps of 10, 15 seconds per step
+blast stress --min-rps 10 --max-rps 100 --step 10 --step-duration 15
 ```
 
 Example `check` output:
@@ -85,6 +95,33 @@ Example `run` output:
     p999:  45ms
 ```
 
+Example `stress` output:
+
+```
+ -> step 10 req/s for 15s
+    10 req/s      150 req   100.0%   p50:     6ms   p99:    11ms   errors: 0
+ -> step 20 req/s for 15s
+    20 req/s      300 req   100.0%   p50:     7ms   p99:    14ms   errors: 0
+ -> step 30 req/s for 15s
+    30 req/s      450 req    99.3%   p50:    12ms   p99:   523ms   errors: 3  ⚠
+
+⚠ breaking point at 30 req/s
+  p99:        523ms
+  error rate: 0.7%
+
+──────────────────────────────────────────────────────────────────────
+  RPS      Requests   Success    p50      p95      p99      Errors
+──────────────────────────────────────────────────────────────────────
+  10       150        100.0%     6ms      9ms      11ms     0
+  20       300        100.0%     7ms      11ms     14ms     0
+  30       450        99.3%      12ms     310ms    523ms    3        ⚠
+──────────────────────────────────────────────────────────────────────
+
+recommendation:
+check GET /metrics on your API
+ run EXPLAIN ANALYZE on your slowest query
+```
+
 ## Commands
 
 | Command | Description |
@@ -94,6 +131,7 @@ Example `run` output:
 | `blast validate` | Validate `blast.config.json` and report any issues |
 | `blast seed` | Run all endpoints tagged `"seed"` N times to populate a database with fake data |
 | `blast run` | Fire requests at a fixed rate for a set duration and report latency percentiles |
+| `blast stress` | Ramp RPS from a minimum to a maximum in steps and detect the breaking point |
 
 All commands accept `--config <path>` to point at a different config location.
 
@@ -110,6 +148,17 @@ All commands accept `--config <path>` to point at a different config location.
 | --- | --- | --- |
 | `--rps` | `10` | Target requests per second |
 | `-d` / `--duration` | `30` | How long to run the load test, in seconds |
+
+### `blast stress` options
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--min-rps` | `10` | Starting requests per second |
+| `--max-rps` | `100` | Maximum requests per second to reach |
+| `--step` | `10` | RPS increment between steps |
+| `--step-duration` | `15` | Seconds to hold each RPS level before stepping up |
+
+The stress test stops early and prints a breaking-point report when p99 latency exceeds 500 ms or the error rate exceeds 1 % for a step.
 
 ## Configuration
 
@@ -175,7 +224,7 @@ A `blast.config.json` looks like this:
 | --- | --- | --- |
 | `base_url` | yes | Base URL prepended to every endpoint path |
 | `headers` | no | Headers sent with every request (endpoint headers override these) |
-| `endpoints` | yes | List of endpoints executed by `check`, `seed`, and `run` |
+| `endpoints` | yes | List of endpoints executed by `check`, `seed`, `run`, and `stress` |
 | `setup` | no | Requests run once before a load test to bootstrap context (e.g. login to get a token) |
 
 ### Endpoint fields
@@ -222,10 +271,14 @@ Tags let you group endpoints so different commands target different subsets.
 }
 ```
 
-- `blast seed` runs only endpoints that include the `"seed"` tag.
-- `blast run` runs only endpoints that include the `"run"` tag.
-- If **no** endpoint in the config has any tags, both commands fall back to running all endpoints.
-- An endpoint can carry multiple tags (`["seed", "run"]`) and will be included whenever any of its tags match.
+| Tag | Used by |
+| --- | --- |
+| `"seed"` | `blast seed` |
+| `"run"` | `blast run` |
+| `"stress"` | `blast stress` |
+
+- If **no** endpoint in the config has any tags, all three commands fall back to running all endpoints.
+- An endpoint can carry multiple tags (`["run", "stress"]`) and will be included whenever any of its tags match.
 
 ### Setup phase
 
