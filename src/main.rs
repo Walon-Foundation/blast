@@ -49,6 +49,21 @@ enum Command {
 
         #[arg(long, short='d', default_value="30")]
         duration:u64
+    },
+
+    /// Ramps from mins-rps to max-rps in steps, calls the blast run logic for each step
+    Stress {
+        #[arg(long, default_value="10")]
+        min_rps: u64,
+
+        #[arg(long, default_value="100")]
+        max_rps: u64,
+
+        #[arg(long, default_value="10")]
+        step: u64,
+
+        #[arg(long, default_value="15")]
+        step_duration: u64
     }
 }
 
@@ -75,6 +90,10 @@ async fn main() -> Result<()>{
 
         Command::Run { rps, duration } => {
             commands::run::run(&cli.config, rps, duration).await?;
+        },
+
+        Command::Stress { min_rps, max_rps, step, step_duration } => {
+            commands::stress::run(&cli.config, min_rps, max_rps, step, step_duration).await?;
         }
     }
 

@@ -14,7 +14,8 @@
       "extract": null,
       "tags": [
         "check",
-        "seed"
+        "seed",
+        "stress"
       ]
     },
     {
@@ -45,7 +46,8 @@
       },
       "tags": [
         "check",
-        "seed"
+        "seed",
+        "stress"
       ]
     }
   ],
