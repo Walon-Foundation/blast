@@ -19,13 +19,17 @@ Describe your API once in a `blast.config.json` file, then hit every endpoint wi
 
 ## Installation
 
-### Pre-built binaries
+The recommended way to install blast is to grab the pre-built binary for your platform from the [GitHub Releases](https://github.com/Walon-Foundation/blast/releases) page. Pre-built binaries are available for:
 
-Download the latest release for your platform from the [GitHub Releases](https://github.com/Walon-Foundation/blast/releases) page. Binaries are available for Linux, macOS, and Windows on both x86_64 and arm64.
+- Linux x86_64 and arm64
+- macOS Apple Silicon (arm64)
+- Windows x86_64
+
+Download the archive for your platform, extract it, and place the `blast` binary somewhere on your `PATH`.
 
 ### Build from source
 
-Requires a recent stable Rust toolchain:
+If you prefer to build from source, you need a recent stable Rust toolchain:
 
 ```sh
 git clone https://github.com/Walon-Foundation/blast.git
