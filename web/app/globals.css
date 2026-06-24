@@ -188,3 +188,31 @@ body {
   .prose h2 { font-size: 1rem; }
   .prose pre code { font-size: 0.75rem; padding: 1rem; }
 }
+
+/* ── Shiki syntax highlighting ───────────────────── */
+
+.pre-outer pre {
+  margin: 0 !important;
+  padding: 1.125rem 1.25rem !important;
+  border-radius: 0 !important;
+  border: none !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.85 !important;
+  overflow-x: auto;
+  background: #0a0a0c !important;
+}
+.pre-outer code {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+.pre-outer .shiki,
+.pre-outer .shiki pre {
+  background: #0a0a0c !important;
+}
+.pre-outer:hover .copy-code-btn { opacity: 1 !important; }
+.copy-code-btn:hover { border-color: #3f3f46 !important; color: #a1a1aa !important; }

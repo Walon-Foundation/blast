@@ -101,6 +101,17 @@ const ROADMAP = [
   { status: "planned",     label: "Threshold assertions",   desc: "--assert p99<200ms exits non-zero. Drop into CI as a performance gate." },
 ];
 
+const COMPARE_ROWS = [
+  { feature: "OpenAPI spec as config",  blast: true,  k6: false, wrk: false, ab: false },
+  { feature: "Mock server built-in",    blast: true,  k6: false, wrk: false, ab: false },
+  { feature: "Request chaining",        blast: true,  k6: true,  wrk: false, ab: false },
+  { feature: "Fake data generation",    blast: true,  k6: true,  wrk: false, ab: false },
+  { feature: "Zero-code setup",         blast: true,  k6: false, wrk: true,  ab: true  },
+  { feature: "CI exit codes",           blast: true,  k6: true,  wrk: false, ab: false },
+  { feature: "RPS ramp / stress mode",  blast: true,  k6: true,  wrk: false, ab: false },
+  { feature: "Rust performance",        blast: true,  k6: false, wrk: true,  ab: false },
+];
+
 const STATUS_META: Record<string, { color: string; bg: string; border: string; label: string }> = {
   done:          { color: "#86efac", bg: "rgba(134,239,172,0.07)",  border: "rgba(134,239,172,0.18)",  label: "done" },
   "in-progress": { color: "#f97316", bg: "rgba(249,115,22,0.07)",   border: "rgba(249,115,22,0.2)",    label: "in progress" },
@@ -683,6 +694,92 @@ export default function Home() {
                 ))}
               </pre>
             </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Comparison ─────────────────────────────────── */}
+      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            style={{ marginBottom: "2.5rem" }}
+          >
+            <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.875rem" }}>
+              Why blast
+            </p>
+            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.04em", color: "#fafafa", marginBottom: "0.75rem", lineHeight: 1.15 }}>
+              Built for API contracts, not scripts.
+            </h2>
+            <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, maxWidth: 540 }}>
+              Most load tools require you to write code. blast reads the spec your team already has.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #1c1c1f" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid #1c1c1f" }}>
+                    <th style={{ textAlign: "left", padding: "0.875rem 1.25rem", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#3f3f46", width: "40%" }}>
+                      Feature
+                    </th>
+                    {[
+                      { name: "blast", accent: true },
+                      { name: "k6",    accent: false },
+                      { name: "wrk",   accent: false },
+                      { name: "ab",    accent: false },
+                    ].map((tool) => (
+                      <th
+                        key={tool.name}
+                        style={{
+                          textAlign: "center",
+                          padding: "0.875rem 1rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.04em",
+                          color: tool.accent ? "#f97316" : "#52525b",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {tool.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARE_ROWS.map((row, i) => (
+                    <tr
+                      key={row.feature}
+                      style={{ borderBottom: i < COMPARE_ROWS.length - 1 ? "1px solid #111113" : "none" }}
+                    >
+                      <td style={{ padding: "0.75rem 1.25rem", fontSize: "0.875rem", color: "#a1a1aa" }}>
+                        {row.feature}
+                      </td>
+                      {([row.blast, row.k6, row.wrk, row.ab] as boolean[]).map((has, ci) => (
+                        <td key={ci} style={{ textAlign: "center", padding: "0.75rem 1rem" }}>
+                          {has ? (
+                            <span style={{ color: ci === 0 ? "#f97316" : "#52525b", fontSize: "0.9rem", fontWeight: 700 }}>&#10003;</span>
+                          ) : (
+                            <span style={{ color: "#27272a", fontSize: "0.9rem" }}>&#8212;</span>
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "#27272a", marginTop: "0.75rem", textAlign: "right" }}>
+              k6 requires JS. wrk requires Lua for anything beyond GETs. ab has no auth or body support.
+            </p>
           </motion.div>
         </div>
       </section>

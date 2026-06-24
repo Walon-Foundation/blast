@@ -70,6 +70,36 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
+          <button
+            onClick={() => {
+              window.dispatchEvent(
+                new KeyboardEvent("keydown", { key: "k", ctrlKey: true, metaKey: true, bubbles: true })
+              );
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              background: "#111113",
+              border: "1px solid #1c1c1f",
+              borderRadius: 6,
+              padding: "0.3rem 0.625rem",
+              color: "#52525b",
+              fontSize: "0.75rem",
+              cursor: "pointer",
+              fontFamily: "var(--font-mono)",
+              transition: "border-color 0.15s, color 0.15s",
+            }}
+            className="search-trigger"
+            aria-label="Search"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+              <circle cx="6.5" cy="6.5" r="4.5" />
+              <path d="M10.5 10.5L14 14" />
+            </svg>
+            Search
+            <kbd style={{ fontSize: "0.6rem", background: "#09090b", border: "1px solid #27272a", borderRadius: 3, padding: "0.1rem 0.3rem", color: "#3f3f46" }}>⌘K</kbd>
+          </button>
           <a
             href="https://github.com/Walon-Foundation/blast"
             target="_blank"
@@ -195,9 +225,10 @@ export function Navbar() {
 
       <style>{`
         @media (max-width: 700px) {
-          .nav-link-item, .nav-download { display: none !important; }
+          .nav-link-item, .nav-download, .search-trigger { display: none !important; }
           .nav-hamburger { display: block !important; }
         }
+        .search-trigger:hover { border-color: #27272a !important; color: #a1a1aa !important; }
       `}</style>
     </header>
   );

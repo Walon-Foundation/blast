@@ -1,6 +1,7 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 import { CopyButton } from "@/components/copy-button";
+import { CodeBlock } from "@/components/docs/code-block";
+import { ActiveSidebar } from "@/components/docs/sidebar";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -17,50 +18,9 @@ export const metadata: Metadata = {
   },
 };
 
-/* ── Sidebar nav ───────────────────────────────────── */
-
-const NAV_SECTIONS = [
-  {
-    heading: "Getting started",
-    links: [
-      { label: "Overview",    href: "#overview" },
-      { label: "Install",     href: "#install" },
-      { label: "Quick start", href: "#quickstart" },
-    ],
-  },
-  {
-    heading: "Commands",
-    links: [
-      { label: "init",     href: "#cmd-init" },
-      { label: "validate", href: "#cmd-validate" },
-      { label: "check",    href: "#cmd-check" },
-      { label: "seed",     href: "#cmd-seed" },
-      { label: "run",      href: "#cmd-run" },
-      { label: "stress",   href: "#cmd-stress" },
-      { label: "mock",     href: "#cmd-mock" },
-    ],
-  },
-  {
-    heading: "Config",
-    links: [
-      { label: "OpenAPI spec",      href: "#configuration" },
-      { label: "x-blast extensions", href: "#extensions" },
-      { label: "Fake data",         href: "#fake-data" },
-      { label: "Tags",              href: "#tags" },
-    ],
-  },
-  {
-    heading: "Advanced",
-    links: [
-      { label: "Setup phase",       href: "#setup" },
-      { label: "Request chaining",  href: "#chaining" },
-    ],
-  },
-];
-
 /* ── Code block ────────────────────────────────────── */
 
-function Pre({ lang, children }: { lang?: string; children: string }) {
+function Pre({ lang = "bash", children }: { lang?: string; children: string }) {
   return (
     <div
       className="pre-outer"
@@ -72,36 +32,8 @@ function Pre({ lang, children }: { lang?: string; children: string }) {
         overflow: "hidden",
       }}
     >
-      {lang && (
-        <div
-          style={{
-            padding: "0.375rem 1rem",
-            borderBottom: "1px solid #1c1c1f",
-            background: "#111113",
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.6875rem",
-            color: "#3f3f46",
-            letterSpacing: "0.04em",
-          }}
-        >
-          {lang}
-        </div>
-      )}
-      <pre
-        style={{
-          margin: 0,
-          padding: "1.125rem 1.25rem",
-          background: "#0a0a0c",
-          overflowX: "auto",
-          fontFamily: "var(--font-mono)",
-          fontSize: "0.8125rem",
-          lineHeight: 1.85,
-          color: "#d4d4d8",
-        }}
-      >
-        <code>{children}</code>
-      </pre>
-      <CopyButton text={children} />
+      <CopyButton text={children.trim()} />
+      <CodeBlock code={children} lang={lang} />
     </div>
   );
 }
@@ -281,58 +213,9 @@ export default function DocsPage() {
         }}
         className="docs-sidebar"
       >
-        <nav style={{ position: "sticky", top: 80 }}>
-          <Link
-            href="/"
-            style={{
-              display: "block",
-              fontSize: "0.8125rem",
-              color: "#3f3f46",
-              textDecoration: "none",
-              marginBottom: "1.75rem",
-              transition: "color 0.15s",
-            }}
-            className="sidebar-back"
-          >
-            ← Home
-          </Link>
-
-          {NAV_SECTIONS.map((section) => (
-            <div key={section.heading} style={{ marginBottom: "1.5rem" }}>
-              <p
-                style={{
-                  fontSize: "0.6875rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "#3f3f46",
-                  marginBottom: "0.5rem",
-                  paddingLeft: "0.5rem",
-                }}
-              >
-                {section.heading}
-              </p>
-              {section.links.map((l) => (
-                <a
-                  key={l.href}
-                  href={l.href}
-                  style={{
-                    display: "block",
-                    padding: "0.3rem 0.5rem",
-                    fontSize: "0.8125rem",
-                    color: "#71717a",
-                    textDecoration: "none",
-                    borderRadius: 5,
-                    transition: "color 0.15s, background 0.15s",
-                  }}
-                  className="sidebar-link"
-                >
-                  {l.label}
-                </a>
-              ))}
-            </div>
-          ))}
-        </nav>
+        <div style={{ position: "sticky", top: 80 }}>
+          <ActiveSidebar />
+        </div>
       </aside>
 
       {/* ── Content ──────────────────────────────────── */}
@@ -356,7 +239,24 @@ export default function DocsPage() {
           }}
         >
           <div style={{ display: "flex", gap: "0.5rem", paddingBottom: "4px" }}>
-            {NAV_SECTIONS.flatMap((s) => s.links).map((l) => (
+            {[
+              { label: "Overview",    href: "#overview" },
+              { label: "Install",     href: "#install" },
+              { label: "Quick start", href: "#quickstart" },
+              { label: "init",        href: "#cmd-init" },
+              { label: "validate",    href: "#cmd-validate" },
+              { label: "check",       href: "#cmd-check" },
+              { label: "seed",        href: "#cmd-seed" },
+              { label: "run",         href: "#cmd-run" },
+              { label: "stress",      href: "#cmd-stress" },
+              { label: "mock",        href: "#cmd-mock" },
+              { label: "Config",      href: "#configuration" },
+              { label: "Extensions",  href: "#extensions" },
+              { label: "Fake data",   href: "#fake-data" },
+              { label: "Tags",        href: "#tags" },
+              { label: "Setup",       href: "#setup" },
+              { label: "Chaining",    href: "#chaining" },
+            ].map((l) => (
               <a
                 key={l.href}
                 href={l.href}
@@ -401,7 +301,7 @@ export default function DocsPage() {
         {/* Install */}
         <Section id="install" title="Installation">
           <SubSection id="install-unix" title="Linux & macOS">
-            <Pre lang="sh">{`curl -fsSL https://raw.githubusercontent.com/Walon-Foundation/blast/main/install.sh | sh`}</Pre>
+            <Pre lang="bash">{`curl -fsSL https://raw.githubusercontent.com/Walon-Foundation/blast/main/install.sh | sh`}</Pre>
             <P>
               Detects your OS and architecture. Downloads the pre-built binary to <C>~/.local/bin</C>.
               See the <a href="/install" style={{ color: "#fb923c", textDecoration: "underline", textUnderlineOffset: 3 }}>install guide</a> for custom install paths.
@@ -414,14 +314,14 @@ export default function DocsPage() {
           </SubSection>
 
           <SubSection id="install-source" title="Build from source">
-            <Pre lang="sh">{`cargo install --git https://github.com/Walon-Foundation/blast`}</Pre>
+            <Pre lang="bash">{`cargo install --git https://github.com/Walon-Foundation/blast`}</Pre>
             <P>Requires Rust 1.75 or later. Cross-compile targets are listed in the repository.</P>
           </SubSection>
         </Section>
 
         {/* Quick start */}
         <Section id="quickstart" title="Quick start">
-          <Pre lang="sh">{`# 1. Create a starter config in the current directory
+          <Pre lang="bash">{`# 1. Create a starter config in the current directory
 blast init
 
 # 2. Verify the config is valid and show all endpoints
@@ -449,7 +349,7 @@ blast stress --min-rps 10 --max-rps 200 --step 20 --step-duration 30`}</Pre>
               file is a minimal but valid OpenAPI 3.x spec with one example endpoint. Edit it to describe
               your API, then run <C>blast check</C>.
             </P>
-            <Pre lang="sh">{`blast init
+            <Pre lang="bash">{`blast init
 blast init ./my-api`}</Pre>
           </SubSection>
 
@@ -483,7 +383,7 @@ blast init ./my-api`}</Pre>
                 ["-j, --concurrency", "1", "Maximum parallel requests"],
               ]}
             />
-            <Pre lang="sh">{`blast seed --count 1000 --concurrency 20`}</Pre>
+            <Pre lang="bash">{`blast seed --count 1000 --concurrency 20`}</Pre>
           </SubSection>
 
           <SubSection id="cmd-run" title="blast run" mono>
@@ -499,7 +399,7 @@ blast init ./my-api`}</Pre>
                 ["-d, --duration", "30", "Test duration in seconds"],
               ]}
             />
-            <Pre lang="sh">{`blast run --rps 100 --duration 120`}</Pre>
+            <Pre lang="bash">{`blast run --rps 100 --duration 120`}</Pre>
           </SubSection>
 
           <SubSection id="cmd-stress" title="blast stress" mono>
@@ -518,7 +418,7 @@ blast init ./my-api`}</Pre>
                 ["--step-duration", "15", "Seconds to hold each step"],
               ]}
             />
-            <Pre lang="sh">{`blast stress --min-rps 10 --max-rps 500 --step 50 --step-duration 20`}</Pre>
+            <Pre lang="bash">{`blast stress --min-rps 10 --max-rps 500 --step 50 --step-duration 20`}</Pre>
           </SubSection>
 
           <SubSection id="cmd-mock" title="blast mock" mono>
@@ -540,10 +440,10 @@ blast init ./my-api`}</Pre>
                 ["--config", "openapi.json", "Path to OpenAPI spec (auto-detected if omitted)"],
               ]}
             />
-            <Pre lang="sh">{`blast mock
+            <Pre lang="bash">{`blast mock
 blast mock --port 8080
 blast mock --config ./specs/api.json`}</Pre>
-            <Pre lang="sh">{`$ blast mock --port 4000
+            <Pre lang="bash">{`$ blast mock --port 4000
 
   Loaded openapi.json
 
@@ -751,7 +651,7 @@ blast mock --config ./specs/api.json`}</Pre>
             array indices (<C>items.0.id</C>). Only scalar values (strings, numbers, booleans)
             are stored — objects and arrays emit a warning and are skipped.
           </P>
-          <Pre lang="json">{`// Operation A: extract the token
+          <Pre lang="jsonc">{`// Operation A: extract the token
 "x-blast-extract": {
   "token":   "data.access_token",
   "user_id": "data.user.id"
@@ -771,15 +671,37 @@ blast mock --config ./specs/api.json`}</Pre>
           </P>
         </Section>
 
+        {/* Edit on GitHub */}
+        <div
+          style={{
+            marginTop: "3rem",
+            paddingTop: "1.5rem",
+            borderTop: "1px solid #1c1c1f",
+          }}
+        >
+          <a
+            href="https://github.com/Walon-Foundation/blast/blob/main/web/app/docs/page.tsx"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: "0.8125rem",
+              color: "#3f3f46",
+              textDecoration: "none",
+              transition: "color 0.15s",
+            }}
+            className="edit-github-link"
+          >
+            Edit this page on GitHub →
+          </a>
+        </div>
+
       </article>
 
       <style>{`
         .docs-sidebar { display: block; }
-        .sidebar-back:hover { color: #71717a !important; }
-        .sidebar-link:hover { color: #fafafa !important; background: #111113 !important; }
-        .pre-outer:hover .copy-btn { opacity: 1 !important; }
         .mobile-pill:hover { color: #fafafa !important; }
         .docs-mobile-nav::-webkit-scrollbar { display: none; }
+        .edit-github-link:hover { color: #71717a !important; }
         @media (max-width: 900px) {
           .docs-sidebar { display: none !important; }
           .docs-mobile-nav { display: block !important; }
