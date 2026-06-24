@@ -1303,11 +1303,183 @@ The ramp between stages works by computing the interval_ms at the start of each 
 
 15. **`blast history`** — do last. Depends on structured output (needs the JSON shape to be stable) and adds the `dirs` crate dependency.
 
-16. **HTML report** — do after structured output and stat.rs are stable. Depends on the JSON shape produced by `to_json()` since the template reads from it.
+16. **Fake data engine** — already shipped. Listed here for completeness; no implementation work remaining.
+
+17. **Request chaining** — already shipped. Listed here for completeness; no implementation work remaining.
+
+18. **HTML report** — do after structured output and stat.rs are stable. Depends on the JSON shape produced by `to_json()` since the template reads from it.
 
 ---
 
-## 16. HTML report (`--output html`)
+## 16. Fake data engine
+
+### Why
+
+Hardcoded request bodies create brittle tests. Using the same email or user ID in every request causes uniqueness constraint failures, pollutes the database with predictable fixture data, and means a seed run that creates 500 users all have the same username. Tests should generate realistic, varied data on every run — without the engineer writing a data factory.
+
+### Result
+
+`{{fake.email}}`, `{{fake.uuid}}`, `{{fake.name}}` and 14 other placeholders work anywhere in a request body, header value, or URL path. Each request resolves them fresh, so 500 concurrent seed requests each get a unique email address. Placeholders can be mixed with literal text: `"user-{{fake.uuid}}@example.com"` produces a valid unique address every time.
+
+Supported generators:
+
+| Placeholder | Output |
+|---|---|
+| `fake.email` | `ada.lovelace@freemail.dev` |
+| `fake.username` | `ada_lovelace42` |
+| `fake.password` | 8–16 char random string |
+| `fake.url` | domain suffix string |
+| `fake.name` | full name |
+| `fake.firstname` | first name |
+| `fake.lastname` | last name |
+| `fake.word` | single lorem word |
+| `fake.sentence` | 3–8 word sentence |
+| `fake.paragraph` | 1–3 sentence paragraph |
+| `fake.company` | company name |
+| `fake.city` | city name |
+| `fake.country` | country name |
+| `fake.uuid` | v4 UUID string |
+
+Unknown placeholders warn to stderr and are left unchanged so the user notices rather than silently sending a broken request.
+
+### Pseudo code
+
+```
+// src/template.rs
+
+pub type Context = HashMap<String, String>
+
+// entry points — called by every command before each request
+pub fn resolve(value: &Value, ctx: &Context) -> Value
+  // recursively walks the JSON value tree
+  // Value::String(s) => Value::String(resolve_str(s, ctx))
+  // Value::Object(map) => rebuild map with each value resolved
+  // Value::Array(arr) => rebuild array with each element resolved
+  // other => clone unchanged
+
+pub fn resolve_map(map: &HashMap<String,String>, ctx: &Context) -> HashMap<String,String>
+  // used for headers — same logic but over a flat string map
+
+// internal
+fn resolve_str(s: &str, ctx: &Context) -> String
+  if s == "{{key}}"  (whole string is one placeholder):
+    return resolve_key(trimmed_key, ctx)
+  elif s contains "{{":
+    return resolved_mixed(s, ctx)   // handles mixed literal+placeholder
+  else:
+    return s unchanged
+
+fn resolved_mixed(s: &str, ctx: &Context) -> String
+  // walk the string left to right
+  // copy literal segments to result
+  // when "{{" found, find matching "}}", resolve the key, append
+  // if "{{" has no matching "}}", copy remainder and return
+
+fn resolve_key(key: &str, ctx: &Context) -> String
+  // 1. check ctx first — extracted values and --vars override fakes
+  if let Some(val) = ctx.get(key): return val.clone()
+
+  // 2. dispatch to the fake library
+  match key:
+    "fake.email"     => faker::internet::en::FreeEmail().fake()
+    "fake.username"  => faker::internet::en::Username().fake()
+    "fake.password"  => faker::internet::en::Password(8..16).fake()
+    "fake.url"       => faker::internet::en::DomainSuffix().fake()
+    "fake.name"      => faker::name::en::Name().fake()
+    "fake.firstname" => faker::name::en::FirstName().fake()
+    "fake.lastname"  => faker::name::en::LastName().fake()
+    "fake.word"      => faker::lorem::en::Word().fake()
+    "fake.sentence"  => faker::lorem::en::Sentence(3..8).fake()
+    "fake.paragraph" => faker::lorem::en::Paragraph(1..3).fake()
+    "fake.company"   => faker::company::en::CompanyName().fake()
+    "fake.city"      => faker::address::en::CityName().fake()
+    "fake.country"   => faker::address::en::CountryName().fake()
+    "fake.uuid"      => uuid::Uuid::new_v4().to_string()
+
+  // 3. unknown — warn and leave unchanged so the user notices
+    _ =>
+      eprintln!("warning: unknown placeholder {{{{{}}}}} — left unchanged", key)
+      format!("{{{{{}}}}}", key)
+```
+
+**Crate dependencies**
+
+- `fake` — the data generator library. Each `faker::*` module maps to a category.
+- `uuid` — v4 UUID generation (not covered by the `fake` crate's UUID output format).
+
+---
+
+## 17. Request chaining
+
+### Why
+
+Real API flows are stateful. You cannot load-test a "fetch order" endpoint in isolation — you first need an order ID, which comes from a "create order" response. Without chaining, teams work around this by hardcoding known IDs (brittle, environment-specific) or running a manual setup step before blast (error-prone). Chaining lets the spec itself describe the dependency: extract the ID from response A and inject it into request B.
+
+### Result
+
+`x-blast-extract` on an OpenAPI operation maps dot-path expressions to context variable names. After a request completes successfully, blast walks the response body along each dot-path and stores the value in the shared context. Any subsequent request in the same run can reference that variable as `{{variable_name}}`.
+
+Example spec:
+
+```json
+"post": {
+  "operationId": "login",
+  "x-blast-extract": {
+    "auth_token": "data.token",
+    "user_id":    "data.user.id"
+  }
+}
+```
+
+After login succeeds, `{{auth_token}}` and `{{user_id}}` are available to every later request in the run via the template engine. Chaining works across the setup phase too — setup endpoints run first, extract their values, and the results flow into the main load loop.
+
+Dot-path syntax supports:
+- `data.token` — nested object traversal
+- `items.0.id` — array index access (`0` parses as usize)
+- Any combination: `results.0.meta.created_at`
+
+Values that are objects or arrays are skipped with a warning — only scalars (string, number, bool) are extracted.
+
+### Pseudo code
+
+```
+// src/extractor.rs
+
+pub type Context = HashMap<String, String>
+
+// called after every successful request that has extract rules
+pub fn extract(body: &Value, rules: &HashMap<String, String>, ctx: &mut Context)
+  for (var_name, path) in rules:
+    match get_path(body, path):
+      None =>
+        eprintln!("warning: path \"{}\" not found — \"{}\" not set", path, var_name)
+
+      Some(Value::String(s)) => ctx.insert(var_name, s.clone())
+      Some(Value::Number(n)) => ctx.insert(var_name, n.to_string())
+      Some(Value::Bool(b))   => ctx.insert(var_name, b.to_string())
+      Some(_) =>
+        eprintln!("warning: path \"{}\" is object/array — skipped", path)
+
+// navigate a JSON value by dot-separated path segments
+fn get_path<'a>(value: &'a Value, path: &str) -> Option<&'a Value>
+  current = value
+  for segment in path.split('.'):
+    current = match current:
+      Value::Object(map) => map.get(segment)?
+      Value::Array(arr)  => arr.get(segment.parse::<usize>().ok()?)?
+      _                  => return None
+  Some(current)
+```
+
+**Integration with commands**
+
+Every command that fires requests initialises a `Context` before the loop. The setup phase (`load_setup`) runs first and populates ctx with any extracted values. The main loop calls `template::resolve(body, &ctx)` to expand placeholders before sending, and calls `extractor::extract(&response_body, &endpoint.extract, &mut ctx)` after a successful response to capture new values.
+
+The context is shared across all requests within a single run. In `run` and `stress`, multiple tokio tasks share the same `Arc<Mutex<Context>>` — extraction from one in-flight request is visible to subsequent requests once the lock is released.
+
+---
+
+## 18. HTML report (`--output html`)
 
 ### Why
 
