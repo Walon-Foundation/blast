@@ -45,10 +45,10 @@ pub async fn run_check(config: BlastConfig) -> Result<CheckResult, BlastError> {
         let result = runner::execute(&client, &merged_endpoint, &config.base_url, &ctx).await;
 
         // extract variables on success only
-        if result.passed {
-            if let (Some(extract_rules), Some(body)) = (&endpoint.extract, &result.body) {
-                extractor::extract(body, extract_rules, &mut ctx);
-            }
+        if result.passed
+            && let (Some(extract_rules), Some(body)) = (&endpoint.extract, &result.body)
+        {
+            extractor::extract(body, extract_rules, &mut ctx);
         }
 
         results.push(result);
@@ -70,7 +70,7 @@ pub async fn run(config_path: &Path) -> anyhow::Result<()> {
     // non-zero exit if any failed — CI friendly
     let failed = result.total - result.passed;
     if failed > 0 {
-        anyhow::bail!("{} endpoint(s) failed", failed);
+        anyhow::bail!("{failed} endpoint(s) failed");
     }
 
     Ok(())
@@ -119,12 +119,12 @@ fn print_report(result: &CheckResult) {
 
     println!();
     if failed == 0 {
-        println!("  {}", format!("{}/{} passed", passed, total).green().bold());
+        println!("  {}", format!("{passed}/{total} passed").green().bold());
     } else {
         println!(
             "  {}  —  {}",
-            format!("{}/{} passed", passed, total).yellow().bold(),
-            format!("{} failed", failed).red().bold(),
+            format!("{passed}/{total} passed").yellow().bold(),
+            format!("{failed} failed").red().bold(),
         );
     }
     println!();

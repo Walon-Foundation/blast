@@ -114,8 +114,7 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> anyhow::
     }
 
     println!(
-        "seeding {} iterations × {} endpoints (concurrency: {})\n",
-        count, endpoint_count, concurrency,
+        "seeding {count} iterations × {endpoint_count} endpoints (concurrency: {concurrency})\n",
     );
 
     let result = run_seed(SeedConfig { config, count, concurrency }).await?;
@@ -141,7 +140,7 @@ fn print_summary(result: &SeedResult) {
     if failed > 0 {
         println!(
             "{}",
-            format!("{} iteration(s) failed — run blast check to diagnose", failed).yellow()
+            format!("{failed} iteration(s) failed — run blast check to diagnose").yellow()
         );
     } else {
         println!("{}", "all iterations passed".green().bold());

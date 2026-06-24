@@ -13,8 +13,7 @@ pub fn extract(body:&Value, extract_rule:&HashMap<String, String>, ctx:&mut Cont
                     Value::Bool(b)   => Some(b.to_string()),
                     _                => {
                         eprintln!(
-                            "warning: extract path \"{}\" resolved to an object or array — skipped",
-                            path
+                            "warning: extract path \"{path}\" resolved to an object or array — skipped"
                         );
                         None
                     }
@@ -27,8 +26,7 @@ pub fn extract(body:&Value, extract_rule:&HashMap<String, String>, ctx:&mut Cont
 
             None => {
                 eprintln!(
-                    "warning: extract path \"{}\" not found in response — \"{}\" not set in context",
-                    path, var_name
+                    "warning: extract path \"{path}\" not found in response — \"{var_name}\" not set in context"
                 );
             }
         }

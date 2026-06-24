@@ -36,7 +36,7 @@ pub async fn execute(
 
     //resolving the headers
     let resolved_headers = match &endpoint.headers {
-        Some(headers) => template::resolve_map(&headers, ctx),
+        Some(headers) => template::resolve_map(headers, ctx),
         None => HashMap::new()
     };
 
@@ -79,7 +79,7 @@ pub async fn execute(
                 actual_status:   0,   // no status — never reached the server
                 latency_ms,
                 passed:          false,
-                error:           Some(format!("network error: {}", e)),
+                error:           Some(format!("network error: {e}")),
                 body: None
             };
         }

@@ -103,8 +103,8 @@ fn resolve_key(key: &str, ctx: &Context) -> String{
 
         // unknown placeholder — warn and return the original so the user notices
         _ => {
-            eprintln!("warning: unknown placeholder {{{{{}}}}} — left unchanged", key);
-            format!("{{{{{}}}}}", key)
+            eprintln!("warning: unknown placeholder {{{{{key}}}}} — left unchanged");
+            format!("{{{{{key}}}}}")
         }
     }
 }

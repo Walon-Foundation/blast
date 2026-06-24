@@ -161,7 +161,7 @@ impl BlastConfig {
 
         for (i, ep) in self.endpoints.iter().enumerate(){
             if ep.name.is_empty() {
-                return Err(BlastError::Config(format!("endpoint {} is missing a name", i)));
+                return Err(BlastError::Config(format!("endpoint {i} is missing a name")));
             }
             if ep.path.is_empty() {
                 return Err(BlastError::Config(format!("endpoint \"{}\" is missing a path", ep.name)));

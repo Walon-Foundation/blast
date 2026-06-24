@@ -250,7 +250,7 @@ fn print_summary(result: &StressResult, max_rps: u64) {
         if sr.broke {
             println!("{} ⚠", row.red());
         } else {
-            println!("{}", row);
+            println!("{row}");
         }
     }
     println!("{}", "─".repeat(70));
@@ -263,7 +263,7 @@ fn print_summary(result: &StressResult, max_rps: u64) {
     } else {
         println!(
             "{}",
-            format!("API held at {} req/s — try a higher --max-rps", max_rps).green()
+            format!("API held at {max_rps} req/s — try a higher --max-rps").green()
         );
     }
 }
