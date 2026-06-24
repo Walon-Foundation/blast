@@ -2,7 +2,20 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { CopyButton } from "@/components/copy-button";
 
-export const metadata: Metadata = { title: "Docs" };
+export const metadata: Metadata = {
+  title: "Docs",
+  description:
+    "blast documentation. Learn how to use blast run, blast stress, blast mock, and configure your OpenAPI spec with x-blast-* extensions.",
+  alternates: {
+    canonical: "https://blast.walonfoundation.com/docs",
+  },
+  openGraph: {
+    title: "blast Docs",
+    description:
+      "Full reference for blast commands, config, and x-blast-* OpenAPI extensions.",
+    url: "https://blast.walonfoundation.com/docs",
+  },
+};
 
 /* ── Sidebar nav ───────────────────────────────────── */
 

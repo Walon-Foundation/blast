@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Changelog" };
+export const metadata: Metadata = {
+  title: "Changelog",
+  description:
+    "blast release history. See what changed in each version — new features, fixes, and infrastructure updates.",
+  alternates: {
+    canonical: "https://blast.walonfoundation.com/changelog",
+  },
+  openGraph: {
+    title: "blast Changelog",
+    description: "Release history for blast — new features, fixes, and CI/CD updates.",
+    url: "https://blast.walonfoundation.com/changelog",
+  },
+};
 
 type Badge = "feat" | "fix" | "chore" | "docs" | "ci" | "perf";
 
