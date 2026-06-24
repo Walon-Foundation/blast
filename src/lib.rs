@@ -17,10 +17,10 @@ pub use error::BlastError;
 pub use runner::RequestResult;
 
 // Pure, structured-result entry points for embedders (CLI + NAPI).
-pub use commands::check::{run_check, CheckResult};
-pub use commands::run::{run_load_test, RunConfig, RunProgress, RunResult};
-pub use commands::seed::{run_seed, SeedConfig, SeedResult};
-pub use commands::stress::{run_stress, StressConfig, StressProgress, StressResult, StressStep};
+pub use commands::check::{CheckResult, run_check};
+pub use commands::run::{RunConfig, RunProgress, RunResult, run_load_test};
+pub use commands::seed::{SeedConfig, SeedResult, run_seed};
+pub use commands::stress::{StressConfig, StressProgress, StressResult, StressStep, run_stress};
 
 // NAPI binding layer. Lives in src/napi.rs but is exposed as `napi_bindings`
 // to avoid clashing with the `napi` crate name. Only compiled under the `node`
