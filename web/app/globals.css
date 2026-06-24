@@ -1,0 +1,218 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #09090b;
+  --surface: #111113;
+  --surface-raised: #18181b;
+  --border: #27272a;
+  --border-subtle: #1c1c1f;
+  --text: #fafafa;
+  --text-muted: #a1a1aa;
+  --text-dim: #52525b;
+  --accent: #f97316;
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), "Fira Code", "Cascadia Code", monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.2);
+  color: var(--text);
+}
+
+.gradient-text {
+  background: linear-gradient(120deg, #f97316 0%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Docs prose ──────────────────────────────────── */
+
+.prose h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 0.625rem;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.2;
+}
+
+.prose h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.015em;
+}
+
+.prose h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.01em;
+}
+
+.prose p {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  line-height: 1.75;
+  font-size: 0.9375rem;
+}
+
+.prose ul {
+  list-style: none;
+  margin-bottom: 1rem;
+  padding-left: 0;
+}
+
+.prose ul li {
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  padding-left: 1.125rem;
+  position: relative;
+  margin-bottom: 0.25rem;
+}
+
+.prose ul li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--text-dim);
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  color: #c4b5fd;
+  padding: 0.12em 0.38em;
+  border-radius: 4px;
+}
+
+.prose pre {
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.prose pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #d4d4d8;
+  font-size: 0.8125rem;
+  display: block;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  line-height: 1.85;
+}
+
+.prose a {
+  color: #fb923c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+
+.prose a:hover { color: #fdba74; }
+
+.prose strong { color: var(--text); font-weight: 600; }
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.75rem;
+  font-size: 0.875rem;
+}
+
+.prose th {
+  text-align: left;
+  padding: 0.5rem 0.875rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.prose td {
+  padding: 0.625rem 0.875rem;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.prose td:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: #86efac;
+  white-space: nowrap;
+}
+
+.prose tr:last-child td { border-bottom: none; }
+
+/* ── Responsive ──────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .prose h1 { font-size: 1.5rem; }
+  .prose h2 { font-size: 1rem; }
+  .prose pre code { font-size: 0.75rem; padding: 1rem; }
+}
+
+/* ── Shiki syntax highlighting ───────────────────── */
+
+.pre-outer pre {
+  margin: 0 !important;
+  padding: 1.125rem 1.25rem !important;
+  border-radius: 0 !important;
+  border: none !important;
+  font-family: var(--font-mono), monospace !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.85 !important;
+  overflow-x: auto;
+  background: #0a0a0c !important;
+}
+.pre-outer code {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  color: inherit !important;
+}
+.pre-outer .shiki,
+.pre-outer .shiki pre {
+  background: #0a0a0c !important;
+}
+.pre-outer:hover .copy-code-btn { opacity: 1 !important; }
+.copy-code-btn:hover { border-color: #3f3f46 !important; color: #a1a1aa !important; }
