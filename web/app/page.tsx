@@ -81,11 +81,11 @@ const CMDS: Record<OS, { label: string; cmd: string }> = {
 /* ── Stats ─────────────────────────────────────────── */
 
 const STATS = [
-  { value: "6",     label: "CLI commands" },
-  { value: "mock",  label: "server built-in" },
-  { value: "4",     label: "platforms" },
-  { value: "Rust",  label: "core" },
-  { value: "MIT",   label: "license" },
+  { value: "6",    label: "commands" },
+  { value: "14",   label: "fake generators" },
+  { value: "4",    label: "platforms" },
+  { value: "Rust", label: "core" },
+  { value: "MIT",  label: "license" },
 ];
 
 /* ── Roadmap ───────────────────────────────────────── */
@@ -169,218 +169,293 @@ export default function Home() {
         style={{
           position: "relative",
           overflow: "hidden",
-          padding: "7rem 1.5rem 6rem",
+          padding: "6rem 1.5rem 5rem",
         }}
       >
+        {/* Background grid */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+            maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%)",
+            pointerEvents: "none",
+          }}
+        />
         {/* Ambient glow */}
         <div
           aria-hidden
           style={{
             position: "absolute",
-            top: "-10%",
+            top: "-20%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: 900,
+            width: 800,
             height: 500,
-            background: "radial-gradient(ellipse at top, rgba(249,115,22,0.1) 0%, transparent 65%)",
+            background: "radial-gradient(ellipse at top, rgba(249,115,22,0.12) 0%, transparent 65%)",
             pointerEvents: "none",
           }}
         />
 
-        <div style={{ position: "relative", maxWidth: 800, margin: "0 auto" }}>
-          {/* Version badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              color: "#f97316",
-              background: "rgba(249,115,22,0.08)",
-              border: "1px solid rgba(249,115,22,0.18)",
-              borderRadius: 100,
-              padding: "0.2rem 0.75rem",
-              marginBottom: "2rem",
-              letterSpacing: "0.01em",
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f97316", display: "inline-block" }} />
-            v0.1.1 · stable
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08 }}
-            style={{
-              fontSize: "clamp(2.75rem, 6vw, 4.75rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.045em",
-              lineHeight: 1.04,
-              color: "#fafafa",
-              marginBottom: "1.5rem",
-            }}
-          >
-            Load test your API.{" "}
-            <br />
-            <span className="gradient-text">Find the limit.</span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.16 }}
-            style={{
-              fontSize: "1.125rem",
-              color: "#a1a1aa",
-              lineHeight: 1.7,
-              maxWidth: 520,
-              marginBottom: "2.75rem",
-            }}
-          >
-            One config file. Two tools. Load test your API to find where it breaks —
-            or spin up a mock server so frontend developers can build without waiting
-            for the real backend. Both read the same OpenAPI spec.
-          </motion.p>
-
-          {/* Install one-liner — OS detected */}
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.24 }}
-          >
-            {/* OS tabs */}
-            <div
+        <div
+          style={{
+            position: "relative",
+            maxWidth: 1100,
+            margin: "0 auto",
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "4rem",
+            alignItems: "center",
+          }}
+          className="hero-grid"
+        >
+          {/* Left — text */}
+          <div>
+            {/* Version badge */}
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
               style={{
                 display: "inline-flex",
-                gap: 2,
-                background: "#111113",
-                border: "1px solid #1c1c1f",
-                borderRadius: 8,
-                padding: 3,
-                marginBottom: "0.75rem",
+                alignItems: "center",
+                gap: "0.375rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "#f97316",
+                background: "rgba(249,115,22,0.08)",
+                border: "1px solid rgba(249,115,22,0.18)",
+                borderRadius: 100,
+                padding: "0.2rem 0.75rem",
+                marginBottom: "2rem",
+                letterSpacing: "0.01em",
               }}
             >
-              {(["linux", "mac", "windows"] as OS[]).map((o) => (
-                <button
-                  key={o}
-                  onClick={() => setTab(o)}
+              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f97316", display: "inline-block" }} />
+              v0.1.1 · stable
+            </motion.div>
+
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.08 }}
+              style={{
+                fontSize: "clamp(2.5rem, 5vw, 4rem)",
+                fontWeight: 800,
+                letterSpacing: "-0.045em",
+                lineHeight: 1.06,
+                color: "#fafafa",
+                marginBottom: "1.25rem",
+              }}
+            >
+              Load test your API.{" "}
+              <span className="gradient-text">Find the limit.</span>
+            </motion.h1>
+
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.16 }}
+              style={{
+                fontSize: "1rem",
+                color: "#71717a",
+                lineHeight: 1.75,
+                marginBottom: "2.5rem",
+                maxWidth: 420,
+              }}
+            >
+              One OpenAPI spec. Run load tests to find where your API breaks — or spin up a mock server so frontend devs can build right now.
+            </motion.p>
+
+            {/* Install one-liner — OS detected */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.24 }}
+            >
+              {/* OS tabs */}
+              <div
+                style={{
+                  display: "inline-flex",
+                  gap: 2,
+                  background: "#111113",
+                  border: "1px solid #1c1c1f",
+                  borderRadius: 8,
+                  padding: 3,
+                  marginBottom: "0.75rem",
+                }}
+              >
+                {(["linux", "mac", "windows"] as OS[]).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => setTab(o)}
+                    style={{
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      padding: "0.25rem 0.625rem",
+                      borderRadius: 5,
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      background: tab === o ? "#27272a" : "none",
+                      color: tab === o ? "#fafafa" : "#52525b",
+                    }}
+                  >
+                    {o === "linux" ? "Linux" : o === "mac" ? "macOS" : "Windows"}
+                    {o === os && (
+                      <span style={{ marginLeft: "0.375rem", fontSize: "0.6rem", color: "#f97316" }}>your system</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Command box */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                  background: "#0a0a0c",
+                  border: "1px solid #1c1c1f",
+                  borderRadius: 10,
+                  padding: "0.875rem 1rem",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46", flexShrink: 0 }}>
+                  {tab === "windows" ? "PS>" : "$"}
+                </span>
+                <code
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    padding: "0.25rem 0.625rem",
-                    borderRadius: 5,
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    background: tab === o ? "#27272a" : "none",
-                    color: tab === o ? "#fafafa" : "#52525b",
+                    flex: 1,
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "0.8125rem",
+                    color: "#a1a1aa",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
                   }}
                 >
-                  {o === "linux" ? "Linux" : o === "mac" ? "macOS" : "Windows"}
-                  {o === os && (
-                    <span style={{ marginLeft: "0.375rem", fontSize: "0.6rem", color: "#f97316" }}>your system</span>
-                  )}
-                </button>
-              ))}
-            </div>
+                  {activeCmd.cmd}
+                </code>
+                <CopyButton text={activeCmd.cmd} />
+              </div>
 
-            {/* Command box */}
+              <p style={{ marginTop: "0.625rem", fontSize: "0.75rem", color: "#3f3f46" }}>
+                {activeCmd.label} · No compiler required.{" "}
+                <Link href="/install" style={{ color: "#52525b", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  All platforms →
+                </Link>
+              </p>
+            </motion.div>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.32 }}
+              style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem" }}
+            >
+              <Link
+                href="/docs"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 42,
+                  padding: "0 1.375rem",
+                  background: "linear-gradient(120deg, #f97316, #fbbf24)",
+                  color: "#09090b",
+                  borderRadius: 8,
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  letterSpacing: "-0.01em",
+                  boxShadow: "0 0 32px rgba(249,115,22,0.25)",
+                  transition: "opacity 0.15s",
+                }}
+                className="btn-primary"
+              >
+                Read the docs
+              </Link>
+              <a
+                href="https://github.com/Walon-Foundation/blast"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 42,
+                  padding: "0 1.25rem",
+                  background: "none",
+                  border: "1px solid #27272a",
+                  color: "#71717a",
+                  borderRadius: 8,
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  textDecoration: "none",
+                  transition: "border-color 0.15s, color 0.15s",
+                }}
+                className="btn-secondary"
+              >
+                GitHub
+              </a>
+            </motion.div>
+          </div>
+
+          {/* Right — terminal */}
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.65, delay: 0.2 }}
+            style={{
+              background: "#0a0a0c",
+              border: "1px solid #1c1c1f",
+              borderRadius: 12,
+              overflow: "hidden",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.03)",
+            }}
+            className="hero-terminal"
+          >
+            {/* Title bar */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.75rem",
-                background: "#0a0a0c",
-                border: "1px solid #1c1c1f",
-                borderRadius: 10,
-                padding: "0.875rem 1rem",
-                maxWidth: 620,
+                gap: 6,
+                padding: "0.75rem 1rem",
+                borderBottom: "1px solid #111113",
+                background: "rgba(255,255,255,0.015)",
               }}
             >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46", flexShrink: 0 }}>
-                {tab === "windows" ? "PS>" : "$"}
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
+              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
+              <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>
+                blast
               </span>
-              <code
-                style={{
-                  flex: 1,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.8125rem",
-                  color: "#a1a1aa",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {activeCmd.cmd}
-              </code>
-              <CopyButton text={activeCmd.cmd} />
             </div>
-
-            <p style={{ marginTop: "0.625rem", fontSize: "0.75rem", color: "#3f3f46" }}>
-              {activeCmd.label} · No compiler required.{" "}
-              <Link href="/install" style={{ color: "#52525b", textDecoration: "underline", textUnderlineOffset: 3 }}>
-                All platforms →
-              </Link>
-            </p>
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.32 }}
-            style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem" }}
-          >
-            <Link
-              href="/docs"
+            {/* Output */}
+            <pre
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.375rem",
-                background: "linear-gradient(120deg, #f97316, #fbbf24)",
-                color: "#09090b",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-                boxShadow: "0 0 32px rgba(249,115,22,0.25)",
-                transition: "opacity 0.15s",
+                padding: "1.25rem 1.5rem",
+                fontFamily: "var(--font-mono)",
+                fontSize: "0.8rem",
+                lineHeight: 1.9,
+                overflowX: "auto",
+                margin: 0,
               }}
-              className="btn-primary"
             >
-              Read the docs
-            </Link>
-            <a
-              href="https://github.com/Walon-Foundation/blast"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.25rem",
-                background: "none",
-                border: "1px solid #27272a",
-                color: "#71717a",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                textDecoration: "none",
-                transition: "border-color 0.15s, color 0.15s",
-              }}
-              className="btn-secondary"
-            >
-              GitHub
-            </a>
+              {DEMO.map((line, i) => (
+                <div key={i} style={demoStyle(line.t)}>
+                  {line.text || " "}
+                </div>
+              ))}
+            </pre>
           </motion.div>
         </div>
       </section>
@@ -428,84 +503,6 @@ export default function Home() {
             </motion.div>
           ))}
         </motion.div>
-      </section>
-
-      {/* ── Terminal demo ──────────────────────────────── */}
-      <section style={{ padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#3f3f46",
-              marginBottom: "1.25rem",
-            }}
-          >
-            See it in action
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{
-              background: "#0a0a0c",
-              border: "1px solid #1c1c1f",
-              borderRadius: 10,
-              overflow: "hidden",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.025)",
-            }}
-          >
-            {/* Title bar */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "0.75rem 1rem",
-                borderBottom: "1px solid #111113",
-                background: "rgba(255,255,255,0.015)",
-              }}
-            >
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-              <span
-                style={{
-                  marginLeft: "0.625rem",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.75rem",
-                  color: "#3f3f46",
-                }}
-              >
-                bash
-              </span>
-            </div>
-
-            {/* Output */}
-            <pre
-              style={{
-                padding: "1.5rem 1.75rem",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.8125rem",
-                lineHeight: 1.9,
-                overflowX: "auto",
-              }}
-            >
-              {DEMO.map((line, i) => (
-                <div key={i} style={demoStyle(line.t)}>
-                  {line.text || " "}
-                </div>
-              ))}
-            </pre>
-          </motion.div>
-        </div>
       </section>
 
       {/* ── Two tools ──────────────────────────────────── */}
@@ -628,31 +625,29 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}
-            className="mock-demo-grid"
+            style={{ maxWidth: 680, margin: "0 auto" }}
           >
-            {/* Terminal 1: blast mock output */}
-            <div style={{ background: "#0a0a0c", border: "1px solid #1c1c1f", borderRadius: 10, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
+            <div style={{ background: "#0a0a0c", border: "1px solid #1c1c1f", borderRadius: 10, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.025)" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.75rem 1rem", borderBottom: "1px solid #111113", background: "rgba(255,255,255,0.015)" }}>
                 <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
                 <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
                 <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-                <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>bash</span>
+                <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>blast</span>
               </div>
-              <pre style={{ padding: "1.25rem 1.5rem", fontFamily: "var(--font-mono)", fontSize: "0.8rem", lineHeight: 1.9, overflowX: "auto", margin: 0 }}>
+              <pre style={{ padding: "1.5rem 1.75rem", fontFamily: "var(--font-mono)", fontSize: "0.8125rem", lineHeight: 1.9, overflowX: "auto", margin: 0 }}>
                 {[
-                  { t: "cmd",   text: "$ blast mock --port 4000" },
-                  { t: "blank", text: "" },
-                  { t: "dim",   text: "  Loaded openapi.json" },
-                  { t: "blank", text: "" },
-                  { t: "ok",    text: "  GET    /api/v1/users               200" },
-                  { t: "ok",    text: "  POST   /api/v1/auth/register       201" },
-                  { t: "ok",    text: "  POST   /api/v1/auth/login          200" },
-                  { t: "ok",    text: "  GET    /api/v1/users/{id}          200" },
-                  { t: "ok",    text: "  DELETE /api/v1/users/{id}          204" },
-                  { t: "blank", text: "" },
-                  { t: "pass",  text: "  5 routes mounted" },
-                  { t: "accent",text: "  Listening on http://localhost:4000" },
+                  { t: "cmd",    text: "$ blast mock --port 4000" },
+                  { t: "blank",  text: "" },
+                  { t: "dim",    text: "  Loaded openapi.json" },
+                  { t: "blank",  text: "" },
+                  { t: "ok",     text: "  GET    /api/v1/users               200" },
+                  { t: "ok",     text: "  POST   /api/v1/auth/register       201" },
+                  { t: "ok",     text: "  POST   /api/v1/auth/login          200" },
+                  { t: "ok",     text: "  GET    /api/v1/users/{id}          200" },
+                  { t: "ok",     text: "  DELETE /api/v1/users/{id}          204" },
+                  { t: "blank",  text: "" },
+                  { t: "pass",   text: "  5 routes mounted" },
+                  { t: "accent", text: "  Listening on http://localhost:4000" },
                 ].map((line, i) => (
                   <div key={i} style={
                     line.t === "cmd"    ? { color: "#fafafa" } :
@@ -660,35 +655,6 @@ export default function Home() {
                     line.t === "ok"     ? { color: "#86efac" } :
                     line.t === "pass"   ? { color: "#86efac", fontWeight: 600 } :
                     line.t === "accent" ? { color: "#f97316" } :
-                    { color: "transparent", userSelect: "none" as const }
-                  }>{line.text || " "}</div>
-                ))}
-              </pre>
-            </div>
-
-            {/* Terminal 2: curl against mock */}
-            <div style={{ background: "#0a0a0c", border: "1px solid #1c1c1f", borderRadius: 10, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.75rem 1rem", borderBottom: "1px solid #111113", background: "rgba(255,255,255,0.015)" }}>
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-                <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>bash</span>
-              </div>
-              <pre style={{ padding: "1.25rem 1.5rem", fontFamily: "var(--font-mono)", fontSize: "0.8rem", lineHeight: 1.9, overflowX: "auto", margin: 0 }}>
-                {[
-                  { t: "cmd",      text: "$ curl http://localhost:4000/api/v1/users" },
-                  { t: "blank",    text: "" },
-                  { t: "json",     text: '  {' },
-                  { t: "json",     text: '    "data": [' },
-                  { t: "json-val", text: '      { "id": "a3f2c1d8", "email": "jane@example.com" },' },
-                  { t: "json-val", text: '      { "id": "b7c14e22", "email": "john@example.com" }' },
-                  { t: "json",     text: '    ]' },
-                  { t: "json",     text: '  }' },
-                ].map((line, i) => (
-                  <div key={i} style={
-                    line.t === "cmd"      ? { color: "#fafafa" } :
-                    line.t === "json"     ? { color: "#52525b" } :
-                    line.t === "json-val" ? { color: "#86efac" } :
                     { color: "transparent", userSelect: "none" as const }
                   }>{line.text || " "}</div>
                 ))}
@@ -961,10 +927,13 @@ export default function Home() {
         .copy-btn-wrap:hover { border-color: #3f3f46 !important; color: #a1a1aa !important; }
         .panel-link:hover { color: #fafafa !important; }
         .panel-link-accent:hover { color: #fbbf24 !important; }
+        @media (max-width: 860px) {
+          .hero-grid { grid-template-columns: 1fr !important; gap: 2.5rem !important; }
+          .hero-terminal { display: none !important; }
+        }
         @media (max-width: 700px) {
           .two-tools-grid { grid-template-columns: 1fr !important; }
           .two-tools-grid > div:first-child { border-bottom: 1px solid #1c1c1f; }
-          .mock-demo-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </main>
