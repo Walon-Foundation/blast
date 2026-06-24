@@ -1,10 +1,10 @@
 //! Blast as a library crate.
 //!
 //! This exposes Blast's internals so they can be shared by the CLI (`src/main.rs`)
-//! and the NAPI-RS bindings (`src/napi.rs`). Command modules are being refactored
-//! so the work lives in pure functions that return structured results (no stdout,
-//! no `process::exit`), with printing kept in the CLI layer. `check` is done;
-//! `run`/`seed`/`stress` are in progress.
+//! and the NAPI-RS bindings (`src/napi.rs`). Each command lives in a pure function
+//! that returns a structured result (no stdout, no `process::exit`), with printing
+//! kept in the CLI layer — `check`, `run`, `seed`, and `stress` all follow this
+//! shape and are bound for both the CLI and Node.
 
 pub mod commands;
 pub mod config;

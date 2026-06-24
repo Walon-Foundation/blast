@@ -34,7 +34,7 @@
   "scripts": {
     "build": "napi build --platform --release --features node --cargo-flags=--no-default-features",
     "build:debug": "napi build --platform --features node --cargo-flags=--no-default-features",
-    "test": "node -e \"console.log(require('.').version())\""
+    "test": "node -e \"console.log(Object.keys(require('.')).sort().join(', '))\""
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4"
