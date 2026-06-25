@@ -13,6 +13,7 @@ export async function CodeBlock({ code, lang = "bash" }: CodeBlockProps) {
 
   return (
     <div
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: html }}
       className="leading-none"
     />
