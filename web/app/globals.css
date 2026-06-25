@@ -33,25 +33,6 @@
   --font-mono: var(--font-geist-mono), "Fira Code", "Cascadia Code", monospace;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-
-html {
-  background: var(--bg);
-  color: var(--text);
-  scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  font-family: var(--font-sans);
-  background: var(--bg);
-  color: var(--text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
 
 ::selection {
   background: rgba(249, 115, 22, 0.2);
