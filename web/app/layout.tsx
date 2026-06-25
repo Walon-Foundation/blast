@@ -85,15 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
       <body
         suppressHydrationWarning
-        style={{
-          minHeight: "100dvh",
-          display: "flex",
-          flexDirection: "column",
-          background: "#09090b",
-          color: "#fafafa",
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-        }}
+        data-darkreader-ignore
+        className="min-h-dvh flex flex-col bg-canvas text-hi antialiased"
       >
         <script
           type="application/ld+json"
@@ -125,7 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <Navbar />
         <Search />
-        <div style={{ flex: 1 }}>{children}</div>
+        <div className="flex-1">{children}</div>
         <Footer />
       </body>
     </html>

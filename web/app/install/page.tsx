@@ -33,21 +33,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       onClick={copy}
       aria-label="Copy"
-      style={{
-        flexShrink: 0,
-        height: 28,
-        width: 28,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "none",
-        border: "1px solid #27272a",
-        borderRadius: 6,
-        color: done ? "#86efac" : "#52525b",
-        cursor: "pointer",
-        transition: "border-color 0.15s, color 0.15s",
-      }}
-      className="copy-btn"
+      className={`shrink-0 h-7 w-7 flex items-center justify-center bg-transparent border border-rim rounded-md cursor-pointer transition-[border-color,color] duration-150 ${done ? "text-ok" : "text-lo hover:border-mute hover:text-mid"}`}
     >
       {done ? (
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,42 +53,18 @@ function CopyButton({ text }: { text: string }) {
 
 function CodeBox({ label, cmd, prompt = "$" }: { label: string; cmd: string; prompt?: string }) {
   return (
-    <div
-      style={{
-        border: "1px solid #1c1c1f",
-        borderRadius: 10,
-        overflow: "hidden",
-        marginBottom: "1rem",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0.5rem 1rem",
-          borderBottom: "1px solid #1c1c1f",
-          background: "#111113",
-        }}
-      >
-        <span style={{ fontSize: "0.75rem", color: "#52525b", fontFamily: "var(--font-mono)", letterSpacing: "0.02em" }}>
+    <div className="border border-line rounded-[10px] overflow-hidden mb-4">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-line bg-surface">
+        <span className="text-xs text-lo font-mono tracking-[0.02em]">
           {label}
         </span>
         <CopyButton text={cmd} />
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.625rem", padding: "1rem 1.125rem", background: "#0a0a0c" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", color: "#3f3f46", flexShrink: 0 }}>
+      <div className="flex items-center gap-[0.625rem] px-[1.125rem] py-4 bg-[#0a0a0c]">
+        <span className="font-mono text-[0.8125rem] text-mute shrink-0">
           {prompt}
         </span>
-        <code
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.8125rem",
-            color: "#d4d4d8",
-            flex: 1,
-            wordBreak: "break-all",
-          }}
-        >
+        <code className="font-mono text-[0.8125rem] text-[#d4d4d8] flex-1 break-all">
           {cmd}
         </code>
       </div>
@@ -124,57 +86,21 @@ function PlatformRow({
   highlight?: boolean;
 }) {
   return (
-    <tr style={{ borderBottom: "1px solid #111113" }}>
+    <tr className="border-b border-surface">
       <td
-        style={{
-          padding: "0.75rem 1rem",
-          fontSize: "0.875rem",
-          color: highlight ? "#fafafa" : "#a1a1aa",
-          fontWeight: highlight ? 500 : 400,
-          verticalAlign: "top",
-        }}
+        className={`px-4 py-3 text-sm align-top ${highlight ? "text-hi font-medium" : "text-mid font-normal"}`}
       >
         {platform}
         {highlight && (
-          <span
-            style={{
-              marginLeft: "0.5rem",
-              fontSize: "0.6rem",
-              fontWeight: 700,
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              color: "#f97316",
-              background: "rgba(249,115,22,0.08)",
-              border: "1px solid rgba(249,115,22,0.18)",
-              borderRadius: 4,
-              padding: "0.1rem 0.35rem",
-              verticalAlign: "middle",
-            }}
-          >
+          <span className="ml-2 text-[0.6rem] font-bold tracking-[0.07em] uppercase text-accent bg-accent/8 border border-accent/18 rounded px-[0.35rem] py-[0.1rem] align-middle">
             your system
           </span>
         )}
       </td>
-      <td
-        style={{
-          padding: "0.75rem 1rem",
-          fontFamily: "var(--font-mono)",
-          fontSize: "0.8125rem",
-          color: "#52525b",
-          verticalAlign: "top",
-        }}
-      >
+      <td className="px-4 py-3 font-mono text-[0.8125rem] text-lo align-top">
         {triple}
       </td>
-      <td
-        style={{
-          padding: "0.75rem 1rem",
-          fontSize: "0.8125rem",
-          color: "#52525b",
-          verticalAlign: "top",
-          lineHeight: 1.5,
-        }}
-      >
+      <td className="px-4 py-3 text-[0.8125rem] text-lo align-top leading-[1.5]">
         {note}
       </td>
     </tr>
@@ -207,19 +133,11 @@ export default function InstallPage() {
   const detected = platformHighlight[os];
 
   return (
-    <main style={{ maxWidth: 760, margin: "0 auto", padding: "4rem 1.5rem 6rem" }}>
+    <main className="max-w-[760px] mx-auto px-6 pt-16 pb-24">
       {/* Breadcrumb */}
       <Link
         href="/"
-        style={{
-          fontSize: "0.8125rem",
-          color: "#3f3f46",
-          textDecoration: "none",
-          display: "inline-block",
-          marginBottom: "2.5rem",
-          transition: "color 0.15s",
-        }}
-        className="back-link"
+        className="text-[0.8125rem] text-mute no-underline inline-block mb-10 transition-colors duration-150 hover:text-[#71717a]"
       >
         ← Home
       </Link>
@@ -230,70 +148,36 @@ export default function InstallPage() {
         variants={stagger}
       >
         {/* Header */}
-        <motion.div variants={up} style={{ marginBottom: "3rem" }}>
-          <p
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#3f3f46",
-              marginBottom: "0.875rem",
-            }}
-          >
+        <motion.div variants={up} className="mb-12">
+          <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.875rem]">
             Installation
           </p>
-          <h1
-            style={{
-              fontSize: "clamp(2rem, 4vw, 2.75rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.04em",
-              color: "#fafafa",
-              lineHeight: 1.1,
-              marginBottom: "0.875rem",
-            }}
-          >
+          <h1 className="text-[clamp(2rem,4vw,2.75rem)] font-extrabold tracking-[-0.04em] text-hi leading-[1.1] mb-[0.875rem]">
             Get blast running
           </h1>
-          <p style={{ fontSize: "1rem", color: "#71717a", lineHeight: 1.7, maxWidth: 480 }}>
+          <p className="text-base text-[#71717a] leading-[1.7] max-w-[480px]">
             Pre-built binaries for all major platforms. No Rust or compiler needed for the
             one-liner install.
           </p>
         </motion.div>
 
         {/* ── Quick install ─────────────────────────────── */}
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
-            Linux & macOS
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
+            Linux &amp; macOS
           </h2>
           <CodeBox
             label="sh"
             cmd="curl -fsSL https://raw.githubusercontent.com/Walon-Foundation/blast/main/install.sh | sh"
           />
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>
-            Auto-detects OS and architecture. Installs to <code style={{ fontFamily: "var(--font-mono)", color: "#52525b" }}>~/.local/bin</code>.
-            Set <code style={{ fontFamily: "var(--font-mono)", color: "#52525b" }}>BLAST_INSTALL_DIR</code> to override the destination.
+          <p className="text-[0.8125rem] text-mute leading-[1.6]">
+            Auto-detects OS and architecture. Installs to <code className="font-mono text-lo">~/.local/bin</code>.
+            Set <code className="font-mono text-lo">BLAST_INSTALL_DIR</code> to override the destination.
           </p>
         </motion.section>
 
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
             Windows
           </h2>
           <CodeBox
@@ -301,70 +185,39 @@ export default function InstallPage() {
             prompt="PS>"
             cmd="irm https://raw.githubusercontent.com/Walon-Foundation/blast/main/install.ps1 | iex"
           />
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>
-            Downloads the <code style={{ fontFamily: "var(--font-mono)", color: "#52525b" }}>x86_64-pc-windows-msvc</code> binary
+          <p className="text-[0.8125rem] text-mute leading-[1.6]">
+            Downloads the <code className="font-mono text-lo">x86_64-pc-windows-msvc</code> binary
             and adds it to your user PATH automatically.
           </p>
         </motion.section>
 
         {/* ── Build from source ─────────────────────────── */}
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
             Build from source
           </h2>
           <CodeBox label="sh" cmd="cargo install --git https://github.com/Walon-Foundation/blast" />
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>
+          <p className="text-[0.8125rem] text-mute leading-[1.6]">
             Requires Rust 1.75 or later. Run{" "}
-            <code style={{ fontFamily: "var(--font-mono)", color: "#52525b" }}>rustup update stable</code>{" "}
+            <code className="font-mono text-lo">rustup update stable</code>{" "}
             if you need to upgrade.
           </p>
         </motion.section>
 
         {/* ── Platform matrix ───────────────────────────── */}
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
             Supported platforms
           </h2>
 
-          <div
-            style={{
-              border: "1px solid #1c1c1f",
-              borderRadius: 10,
-              overflow: "hidden",
-              marginBottom: "1rem",
-            }}
-          >
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div className="border border-line rounded-[10px] overflow-hidden mb-4">
+            <table className="w-full border-collapse">
               <thead>
-                <tr style={{ borderBottom: "1px solid #1c1c1f", background: "#111113" }}>
+                <tr className="border-b border-line bg-surface">
                   {["Platform", "Target triple", "Notes"].map((h) => (
                     <th
                       key={h}
-                      style={{
-                        padding: "0.5rem 1rem",
-                        textAlign: "left",
-                        fontSize: "0.6875rem",
-                        fontWeight: 600,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        color: "#3f3f46",
-                      }}
+                      className="px-4 py-2 text-left text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-mute"
                     >
                       {h}
                     </th>
@@ -400,67 +253,37 @@ export default function InstallPage() {
             </table>
           </div>
 
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>
-            macOS x86-64 is not supported. Use Rosetta 2 (<code style={{ fontFamily: "var(--font-mono)", color: "#52525b" }}>arch -arm64 zsh</code>)
+          <p className="text-[0.8125rem] text-mute leading-[1.6]">
+            macOS x86-64 is not supported. Use Rosetta 2 (<code className="font-mono text-lo">arch -arm64 zsh</code>)
             or the Linux binary via Docker on Intel Macs.
           </p>
         </motion.section>
 
         {/* ── Manual download ───────────────────────────── */}
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "0.75rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-3 tracking-[-0.015em]">
             Manual download
           </h2>
-          <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, marginBottom: "1rem" }}>
-            Grab an archive from GitHub Releases and place the binary anywhere on your <code style={{ fontFamily: "var(--font-mono)", fontSize: "0.85em", color: "#52525b" }}>PATH</code>.
+          <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] mb-4">
+            Grab an archive from GitHub Releases and place the binary anywhere on your <code className="font-mono text-[0.85em] text-lo">PATH</code>.
           </p>
           <a
             href="https://github.com/Walon-Foundation/blast/releases"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              height: 40,
-              padding: "0 1.125rem",
-              background: "#111113",
-              border: "1px solid #27272a",
-              borderRadius: 8,
-              fontSize: "0.875rem",
-              fontWeight: 500,
-              color: "#a1a1aa",
-              textDecoration: "none",
-              transition: "border-color 0.15s, color 0.15s",
-            }}
-            className="releases-link"
+            className="inline-flex items-center h-10 px-[1.125rem] bg-surface border border-rim rounded-lg text-sm font-medium text-mid no-underline transition-[border-color,color] duration-150 hover:border-mute hover:text-hi"
           >
             GitHub Releases
           </a>
         </motion.section>
 
         {/* ── Verify ────────────────────────────────────── */}
-        <motion.section variants={up} style={{ marginBottom: "3.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+        <motion.section variants={up} className="mb-14">
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
             Verify the install
           </h2>
           <CodeBox label="sh" cmd="blast --version" />
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", marginBottom: "0.875rem", lineHeight: 1.6 }}>
+          <p className="text-[0.8125rem] text-mute mb-[0.875rem] leading-[1.6]">
             If the command is not found, add the install directory to your PATH.
           </p>
           <CodeBox label="sh — add to ~/.bashrc or ~/.zshrc" cmd={`export PATH="$PATH:$HOME/.local/bin"`} />
@@ -468,19 +291,11 @@ export default function InstallPage() {
 
         {/* ── Uninstall ─────────────────────────────────── */}
         <motion.section variants={up}>
-          <h2
-            style={{
-              fontSize: "1rem",
-              fontWeight: 600,
-              color: "#fafafa",
-              marginBottom: "1rem",
-              letterSpacing: "-0.015em",
-            }}
-          >
+          <h2 className="text-base font-semibold text-hi mb-4 tracking-[-0.015em]">
             Uninstall
           </h2>
           <CodeBox label="sh" cmd="rm ~/.local/bin/blast" />
-          <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>
+          <p className="text-[0.8125rem] text-mute leading-[1.6]">
             blast writes no config files or databases. Removing the binary is all that is needed.
           </p>
         </motion.section>
@@ -488,23 +303,11 @@ export default function InstallPage() {
         {/* Footer link */}
         <motion.div
           variants={up}
-          style={{
-            marginTop: "4rem",
-            paddingTop: "2rem",
-            borderTop: "1px solid #1c1c1f",
-            display: "flex",
-            gap: "1.5rem",
-          }}
+          className="mt-16 pt-8 border-t border-line flex gap-6"
         >
           <Link
             href="/docs"
-            style={{
-              fontSize: "0.875rem",
-              color: "#f97316",
-              textDecoration: "none",
-              transition: "color 0.15s",
-            }}
-            className="footer-cta"
+            className="text-sm text-accent no-underline transition-colors duration-150 hover:text-[#fb923c]"
           >
             Read the docs →
           </Link>
@@ -512,26 +315,12 @@ export default function InstallPage() {
             href="https://github.com/Walon-Foundation/blast"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              fontSize: "0.875rem",
-              color: "#52525b",
-              textDecoration: "none",
-              transition: "color 0.15s",
-            }}
-            className="footer-cta-secondary"
+            className="text-sm text-lo no-underline transition-colors duration-150 hover:text-mid"
           >
             GitHub
           </a>
         </motion.div>
       </motion.div>
-
-      <style>{`
-        .back-link:hover { color: #71717a !important; }
-        .releases-link:hover { border-color: #3f3f46 !important; color: #fafafa !important; }
-        .footer-cta:hover { color: #fb923c !important; }
-        .footer-cta-secondary:hover { color: #a1a1aa !important; }
-        .copy-btn:hover { border-color: #3f3f46 !important; color: #a1a1aa !important; }
-      `}</style>
     </main>
   );
 }

@@ -22,16 +22,7 @@ export const metadata: Metadata = {
 
 function Pre({ lang = "bash", children }: { lang?: string; children: string }) {
   return (
-    <div
-      className="pre-outer"
-      style={{
-        position: "relative",
-        marginBottom: "1.5rem",
-        borderRadius: 8,
-        border: "1px solid #1c1c1f",
-        overflow: "hidden",
-      }}
-    >
+    <div className="pre-outer relative mb-6 rounded-lg border border-line overflow-hidden">
       <CopyButton text={children.trim()} />
       <CodeBlock code={children} lang={lang} />
     </div>
@@ -42,17 +33,7 @@ function Pre({ lang = "bash", children }: { lang?: string; children: string }) {
 
 function C({ children }: { children: string }) {
   return (
-    <code
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "0.82em",
-        background: "#18181b",
-        border: "1px solid #27272a",
-        color: "#c4b5fd",
-        padding: "0.12em 0.38em",
-        borderRadius: 4,
-      }}
-    >
+    <code className="font-mono text-[0.82em] bg-raised border border-rim text-[#c4b5fd] px-[0.38em] py-[0.12em] rounded">
       {children}
     </code>
   );
@@ -62,29 +43,14 @@ function C({ children }: { children: string }) {
 
 function Table({ cols, rows }: { cols: string[]; rows: string[][] }) {
   return (
-    <div
-      style={{
-        marginBottom: "1.75rem",
-        overflowX: "auto",
-        border: "1px solid #1c1c1f",
-        borderRadius: 8,
-      }}
-    >
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.875rem" }}>
+    <div className="mb-7 overflow-x-auto border border-line rounded-lg">
+      <table className="w-full border-collapse text-sm">
         <thead>
-          <tr style={{ borderBottom: "1px solid #1c1c1f", background: "#111113" }}>
+          <tr className="border-b border-line bg-surface">
             {cols.map((c) => (
               <th
                 key={c}
-                style={{
-                  padding: "0.5rem 0.875rem",
-                  textAlign: "left",
-                  fontSize: "0.6875rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.1em",
-                  textTransform: "uppercase",
-                  color: "#52525b",
-                }}
+                className="px-[0.875rem] py-2 text-left text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-lo"
               >
                 {c}
               </th>
@@ -95,19 +61,17 @@ function Table({ cols, rows }: { cols: string[]; rows: string[][] }) {
           {rows.map((row, ri) => (
             <tr
               key={ri}
-              style={{ borderBottom: ri < rows.length - 1 ? "1px solid #111113" : "none" }}
+              className={ri < rows.length - 1 ? "border-b border-surface" : ""}
             >
               {row.map((cell, ci) => (
                 <td
                   key={ci}
-                  style={{
-                    padding: "0.625rem 0.875rem",
-                    color: ci === 0 ? "#86efac" : "#71717a",
-                    fontFamily: ci === 0 ? "var(--font-mono)" : "inherit",
-                    fontSize: ci === 0 ? "0.8125rem" : "inherit",
-                    verticalAlign: "top",
-                    lineHeight: 1.6,
-                  }}
+                  className={[
+                    "px-[0.875rem] py-[0.625rem] align-top leading-[1.6]",
+                    ci === 0
+                      ? "text-ok font-mono text-[0.8125rem]"
+                      : "text-[#71717a]",
+                  ].join(" ")}
                 >
                   {cell}
                 </td>
@@ -131,23 +95,15 @@ function Section({ id, title, children, first = false }: {
   return (
     <section
       id={id}
-      style={{
-        marginBottom: "3.5rem",
-        paddingTop: first ? 0 : "0.5rem",
-        scrollMarginTop: 88,
-      }}
+      className={["mb-14 scroll-mt-[88px]", first ? "pt-0" : "pt-2"].join(" ")}
     >
       <h2
-        style={{
-          fontSize: first ? "1.875rem" : "1.125rem",
-          fontWeight: first ? 700 : 600,
-          letterSpacing: first ? "-0.03em" : "-0.015em",
-          color: "#fafafa",
-          marginBottom: first ? "0.875rem" : "0.75rem",
-          paddingBottom: first ? "0.875rem" : 0,
-          borderBottom: first ? "1px solid #1c1c1f" : "none",
-          lineHeight: 1.2,
-        }}
+        className={[
+          "text-hi leading-[1.2]",
+          first
+            ? "text-3xl font-bold tracking-[-0.03em] mb-[0.875rem] pb-[0.875rem] border-b border-line"
+            : "text-lg font-semibold tracking-[-0.015em] mb-3",
+        ].join(" ")}
       >
         {title}
       </h2>
@@ -163,16 +119,12 @@ function SubSection({ id, title, mono = false, children }: {
   children: React.ReactNode;
 }) {
   return (
-    <div id={id} style={{ marginBottom: "2.5rem", scrollMarginTop: 88 }}>
+    <div id={id} className="mb-10 scroll-mt-[88px]">
       <h3
-        style={{
-          fontSize: "0.9375rem",
-          fontWeight: 600,
-          color: mono ? "#fb923c" : "#fafafa",
-          fontFamily: mono ? "var(--font-mono)" : "inherit",
-          marginBottom: "0.625rem",
-          letterSpacing: mono ? "-0.01em" : "-0.01em",
-        }}
+        className={[
+          "text-[0.9375rem] font-semibold mb-[0.625rem] tracking-[-0.01em]",
+          mono ? "text-[#fb923c] font-mono" : "text-hi",
+        ].join(" ")}
       >
         {title}
       </h3>
@@ -183,7 +135,7 @@ function SubSection({ id, title, mono = false, children }: {
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontSize: "0.9375rem", color: "#a1a1aa", lineHeight: 1.75, marginBottom: "0.875rem" }}>
+    <p className="text-[0.9375rem] text-mid leading-[1.75] mb-[0.875rem]">
       {children}
     </p>
   );
@@ -193,52 +145,20 @@ function P({ children }: { children: React.ReactNode }) {
 
 export default function DocsPage() {
   return (
-    <div
-      style={{
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "0 1.5rem",
-        display: "flex",
-        gap: "4rem",
-        alignItems: "flex-start",
-      }}
-    >
+    <div className="max-w-[1100px] mx-auto px-6 flex gap-16 items-start">
       {/* ── Sidebar ──────────────────────────────────── */}
-      <aside
-        style={{
-          width: 176,
-          flexShrink: 0,
-          paddingTop: "3rem",
-          paddingBottom: "3rem",
-        }}
-        className="docs-sidebar"
-      >
-        <div style={{ position: "sticky", top: 80 }}>
+      <aside className="w-44 shrink-0 pt-12 pb-12 max-[900px]:hidden">
+        <div className="sticky top-[4.5rem]">
           <ActiveSidebar />
         </div>
       </aside>
 
       {/* ── Content ──────────────────────────────────── */}
-      <article
-        style={{
-          flex: 1,
-          minWidth: 0,
-          paddingTop: "3rem",
-          paddingBottom: "6rem",
-        }}
-      >
+      <article className="flex-1 min-w-0 pt-12 pb-24">
 
         {/* Mobile pill nav — hidden on desktop, shown ≤900px */}
-        <nav
-          className="docs-mobile-nav"
-          style={{
-            display: "none",
-            marginBottom: "2rem",
-            overflowX: "auto",
-            scrollbarWidth: "none",
-          }}
-        >
-          <div style={{ display: "flex", gap: "0.5rem", paddingBottom: "4px" }}>
+        <nav className="hidden max-[900px]:block mb-8 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex gap-2 pb-1">
             {[
               { label: "Overview",    href: "#overview" },
               { label: "Install",     href: "#install" },
@@ -260,19 +180,7 @@ export default function DocsPage() {
               <a
                 key={l.href}
                 href={l.href}
-                style={{
-                  flexShrink: 0,
-                  padding: "0.3rem 0.75rem",
-                  fontSize: "0.75rem",
-                  color: "#71717a",
-                  background: "#111113",
-                  border: "1px solid #1c1c1f",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                  transition: "color 0.15s",
-                }}
-                className="mobile-pill"
+                className="shrink-0 px-3 py-[0.3rem] text-xs text-[#71717a] bg-surface border border-line rounded-full no-underline whitespace-nowrap transition-colors duration-150 hover:text-hi"
               >
                 {l.label}
               </a>
@@ -283,7 +191,7 @@ export default function DocsPage() {
         {/* Overview */}
         <Section id="overview" title="blast docs" first>
           <P>
-            <strong style={{ color: "#fafafa" }}>blast</strong> is a config-driven API load tester and traffic
+            <strong className="text-hi">blast</strong> is a config-driven API load tester and traffic
             generator written in Rust. Describe your API in an OpenAPI 3.x spec, then hit every endpoint
             with a single command — no code, no scripting.
           </P>
@@ -304,7 +212,7 @@ export default function DocsPage() {
             <Pre lang="bash">{`curl -fsSL https://raw.githubusercontent.com/Walon-Foundation/blast/main/install.sh | sh`}</Pre>
             <P>
               Detects your OS and architecture. Downloads the pre-built binary to <C>~/.local/bin</C>.
-              See the <a href="/install" style={{ color: "#fb923c", textDecoration: "underline", textUnderlineOffset: 3 }}>install guide</a> for custom install paths.
+              See the <a href="/install" className="text-[#fb923c] underline underline-offset-[3px]">install guide</a> for custom install paths.
             </P>
           </SubSection>
 
@@ -462,7 +370,7 @@ blast mock --config ./specs/api.json`}</Pre>
         {/* Configuration */}
         <Section id="configuration" title="Configuration">
           <P>
-            blast reads a standard <strong style={{ color: "#fafafa" }}>OpenAPI 3.x</strong> spec.
+            blast reads a standard <strong className="text-hi">OpenAPI 3.x</strong> spec.
             All blast-specific behaviour is expressed via <C>x-blast-*</C> extension fields on
             the info object or individual operations. No blast-specific top-level keys are added
             — the spec remains valid OpenAPI.
@@ -672,41 +580,18 @@ blast mock --config ./specs/api.json`}</Pre>
         </Section>
 
         {/* Edit on GitHub */}
-        <div
-          style={{
-            marginTop: "3rem",
-            paddingTop: "1.5rem",
-            borderTop: "1px solid #1c1c1f",
-          }}
-        >
+        <div className="mt-12 pt-6 border-t border-line">
           <a
             href="https://github.com/Walon-Foundation/blast/blob/main/web/app/docs/page.tsx"
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              fontSize: "0.8125rem",
-              color: "#3f3f46",
-              textDecoration: "none",
-              transition: "color 0.15s",
-            }}
-            className="edit-github-link"
+            className="text-[0.8125rem] text-mute no-underline transition-colors duration-150 hover:text-[#71717a]"
           >
             Edit this page on GitHub →
           </a>
         </div>
 
       </article>
-
-      <style>{`
-        .docs-sidebar { display: block; }
-        .mobile-pill:hover { color: #fafafa !important; }
-        .docs-mobile-nav::-webkit-scrollbar { display: none; }
-        .edit-github-link:hover { color: #71717a !important; }
-        @media (max-width: 900px) {
-          .docs-sidebar { display: none !important; }
-          .docs-mobile-nav { display: block !important; }
-        }
-      `}</style>
     </div>
   );
 }

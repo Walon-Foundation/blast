@@ -14,7 +14,7 @@ export async function CodeBlock({ code, lang = "bash" }: CodeBlockProps) {
   return (
     <div
       dangerouslySetInnerHTML={{ __html: html }}
-      style={{ lineHeight: 1 }}
+      className="leading-none"
     />
   );
 }
