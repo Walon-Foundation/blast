@@ -82,17 +82,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} bg-canvas scroll-smooth`}>
       <body
-        style={{
-          minHeight: "100dvh",
-          display: "flex",
-          flexDirection: "column",
-          background: "#09090b",
-          color: "#fafafa",
-          WebkitFontSmoothing: "antialiased",
-          MozOsxFontSmoothing: "grayscale",
-        }}
+        suppressHydrationWarning
+        data-darkreader-ignore
+        className="min-h-dvh flex flex-col bg-canvas text-hi antialiased"
       >
         <script
           type="application/ld+json"
@@ -124,7 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <Navbar />
         <Search />
-        <div style={{ flex: 1 }}>{children}</div>
+        <div className="flex-1">{children}</div>
         <Footer />
       </body>
     </html>

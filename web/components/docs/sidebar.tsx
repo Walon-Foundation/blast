@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 interface NavLink {
   label: string;
@@ -79,38 +80,20 @@ export function ActiveSidebar() {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className="flex flex-col gap-6">
       <Link
         href="/"
-        style={{
-          fontSize: "0.8125rem",
-          color: "#3f3f46",
-          textDecoration: "none",
-          transition: "color 0.15s",
-          display: "block",
-          marginBottom: "0.25rem",
-        }}
-        className="sidebar-back"
+        className="text-[0.8125rem] text-mute no-underline transition-colors duration-150 block mb-1 hover:text-[#71717a]"
       >
         ← Home
       </Link>
 
       {SECTIONS.map((section) => (
         <div key={section.title}>
-          <p
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "#3f3f46",
-              marginBottom: "0.5rem",
-              paddingLeft: "0.5rem",
-            }}
-          >
+          <p className="text-[0.6875rem] font-semibold tracking-[0.1em] uppercase text-mute mb-2 pl-2">
             {section.title}
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
+          <div className="flex flex-col gap-px">
             {section.links.map((link) => {
               const id = link.href.slice(1);
               const isActive = active === id;
@@ -118,19 +101,13 @@ export function ActiveSidebar() {
                 <a
                   key={link.href}
                   href={link.href}
-                  style={{
-                    display: "block",
-                    fontSize: "0.8125rem",
-                    color: isActive ? "#fafafa" : "#52525b",
-                    textDecoration: "none",
-                    padding: "0.3rem 0.5rem",
-                    borderRadius: 5,
-                    marginLeft: link.sub ? "0.25rem" : 0,
-                    background: isActive ? "rgba(249,115,22,0.07)" : "transparent",
-                    borderLeft: isActive ? "2px solid #f97316" : "2px solid transparent",
-                    transition: "color 0.15s, background 0.15s, border-color 0.15s",
-                  }}
-                  className="sidebar-link"
+                  className={cn(
+                    "block text-[0.8125rem] no-underline py-[0.3rem] px-2 rounded-[5px] border-l-2 transition-colors duration-150 hover:text-mid",
+                    link.sub ? "ml-1" : "ml-0",
+                    isActive
+                      ? "text-hi bg-accent/8 border-accent"
+                      : "text-lo border-transparent"
+                  )}
                 >
                   {link.label}
                 </a>
@@ -139,11 +116,6 @@ export function ActiveSidebar() {
           </div>
         </div>
       ))}
-
-      <style>{`
-        .sidebar-back:hover { color: #71717a !important; }
-        .sidebar-link:hover { color: #a1a1aa !important; }
-      `}</style>
     </div>
   );
 }

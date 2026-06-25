@@ -3,40 +3,20 @@ import Link from "next/link";
 export function Footer() {
   return (
     <footer
-      style={{
-        borderTop: "1px solid #1c1c1f",
-        marginTop: "6rem",
-      }}
+      suppressHydrationWarning
+      className="border-t border-line mt-24"
     >
       <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "1.75rem 1.5rem",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "1rem",
-        }}
+        className="max-w-[1100px] mx-auto px-6 py-7 flex items-center justify-between flex-wrap gap-4"
       >
         <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.8125rem",
-            color: "#3f3f46",
-            letterSpacing: "-0.02em",
-          }}
+          className="font-mono text-[0.8125rem] text-mute tracking-[-0.02em]"
         >
           blast — MIT License
         </span>
 
         <nav
-          style={{
-            display: "flex",
-            gap: "1.5rem",
-            flexWrap: "wrap",
-          }}
+          className="flex gap-6 flex-wrap"
         >
           {[
             { label: "Docs",       href: "/docs",       external: false },
@@ -51,13 +31,7 @@ export function Footer() {
                 href={l.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{
-                  fontSize: "0.8125rem",
-                  color: "#3f3f46",
-                  textDecoration: "none",
-                  transition: "color 0.15s",
-                }}
-                className="footer-link"
+                className="text-[0.8125rem] text-mute no-underline transition-colors duration-150 hover:text-[#71717a]"
               >
                 {l.label}
               </a>
@@ -65,13 +39,7 @@ export function Footer() {
               <Link
                 key={l.label}
                 href={l.href}
-                style={{
-                  fontSize: "0.8125rem",
-                  color: "#3f3f46",
-                  textDecoration: "none",
-                  transition: "color 0.15s",
-                }}
-                className="footer-link"
+                className="text-[0.8125rem] text-mute no-underline transition-colors duration-150 hover:text-[#71717a]"
               >
                 {l.label}
               </Link>
@@ -79,10 +47,6 @@ export function Footer() {
           )}
         </nav>
       </div>
-
-      <style>{`
-        .footer-link:hover { color: #71717a !important; }
-      `}</style>
     </footer>
   );
 }

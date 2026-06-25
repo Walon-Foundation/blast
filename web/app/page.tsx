@@ -3,6 +3,7 @@
 import { motion, type Variants } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 /* ── Motion presets ────────────────────────────────── */
 
@@ -29,21 +30,10 @@ function CopyButton({ text }: { text: string }) {
     <button
       onClick={copy}
       aria-label="Copy"
-      style={{
-        flexShrink: 0,
-        height: 28,
-        width: 28,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "none",
-        border: "1px solid #27272a",
-        borderRadius: 6,
-        color: done ? "#86efac" : "#52525b",
-        cursor: "pointer",
-        transition: "border-color 0.15s, color 0.15s",
-      }}
-      className="copy-btn-wrap"
+      className={cn(
+        "shrink-0 h-7 w-7 flex items-center justify-center bg-transparent border border-rim rounded-md cursor-pointer transition-[border-color,color] duration-150",
+        done ? "text-ok" : "text-lo hover:border-mute hover:text-mid"
+      )}
     >
       {done ? (
         <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -81,11 +71,11 @@ const CMDS: Record<OS, { label: string; cmd: string }> = {
 /* ── Stats ─────────────────────────────────────────── */
 
 const STATS = [
-  { value: "6",     label: "CLI commands" },
-  { value: "mock",  label: "server built-in" },
-  { value: "4",     label: "platforms" },
-  { value: "Rust",  label: "core" },
-  { value: "MIT",   label: "license" },
+  { value: "6",    label: "commands" },
+  { value: "14",   label: "fake generators" },
+  { value: "4",    label: "platforms" },
+  { value: "Rust", label: "core" },
+  { value: "MIT",  label: "license" },
 ];
 
 /* ── Roadmap ───────────────────────────────────────── */
@@ -112,12 +102,6 @@ const COMPARE_ROWS = [
   { feature: "Rust performance",        blast: true,  k6: false, wrk: true,  ab: false },
 ];
 
-const STATUS_META: Record<string, { color: string; bg: string; border: string; label: string }> = {
-  done:          { color: "#86efac", bg: "rgba(134,239,172,0.07)",  border: "rgba(134,239,172,0.18)",  label: "done" },
-  "in-progress": { color: "#f97316", bg: "rgba(249,115,22,0.07)",   border: "rgba(249,115,22,0.2)",    label: "in progress" },
-  planned:       { color: "#3f3f46", bg: "rgba(63,63,70,0.07)",     border: "rgba(63,63,70,0.25)",     label: "planned" },
-};
-
 /* ── Terminal demo lines ───────────────────────────── */
 
 const DEMO: { t: string; text: string }[] = [
@@ -139,13 +123,13 @@ const DEMO: { t: string; text: string }[] = [
   { t: "stat",     text: "  p50 8ms    p95 14ms    p99 18ms    p999 31ms" },
 ];
 
-function demoStyle(t: string): React.CSSProperties {
-  if (t === "cmd")   return { color: "#fafafa" };
-  if (t === "ok")    return { color: "#86efac" };
-  if (t === "pass")  return { color: "#86efac", fontWeight: 600 };
-  if (t === "prog")  return { color: "#71717a" };
-  if (t === "stat")  return { color: "#f97316" };
-  return { userSelect: "none", color: "transparent" };
+function demoClassName(t: string): string {
+  if (t === "cmd")   return "text-hi";
+  if (t === "ok")    return "text-ok";
+  if (t === "pass")  return "text-ok font-semibold";
+  if (t === "prog")  return "text-[#71717a]";
+  if (t === "stat")  return "text-accent";
+  return "select-none text-transparent";
 }
 
 /* ── Page ──────────────────────────────────────────── */
@@ -165,341 +149,156 @@ export default function Home() {
   return (
     <main>
       {/* ── Hero ──────────────────────────────────────── */}
-      <section
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          padding: "7rem 1.5rem 6rem",
-        }}
-      >
+      <section className="relative overflow-hidden px-6 pt-24 pb-20">
+        {/* Background grid */}
+        <div
+          aria-hidden
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+            maskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%)",
+            WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%)",
+          }}
+        />
         {/* Ambient glow */}
         <div
           aria-hidden
+          className="absolute pointer-events-none"
           style={{
-            position: "absolute",
-            top: "-10%",
+            top: "-20%",
             left: "50%",
             transform: "translateX(-50%)",
-            width: 900,
+            width: 800,
             height: 500,
-            background: "radial-gradient(ellipse at top, rgba(249,115,22,0.1) 0%, transparent 65%)",
-            pointerEvents: "none",
+            background: "radial-gradient(ellipse at top, rgba(249,115,22,0.12) 0%, transparent 65%)",
           }}
         />
 
-        <div style={{ position: "relative", maxWidth: 800, margin: "0 auto" }}>
-          {/* Version badge */}
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.375rem",
-              fontSize: "0.75rem",
-              fontWeight: 500,
-              color: "#f97316",
-              background: "rgba(249,115,22,0.08)",
-              border: "1px solid rgba(249,115,22,0.18)",
-              borderRadius: 100,
-              padding: "0.2rem 0.75rem",
-              marginBottom: "2rem",
-              letterSpacing: "0.01em",
-            }}
-          >
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f97316", display: "inline-block" }} />
-            v0.1.1 · stable
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08 }}
-            style={{
-              fontSize: "clamp(2.75rem, 6vw, 4.75rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.045em",
-              lineHeight: 1.04,
-              color: "#fafafa",
-              marginBottom: "1.5rem",
-            }}
-          >
-            Load test your API.{" "}
-            <br />
-            <span className="gradient-text">Find the limit.</span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.16 }}
-            style={{
-              fontSize: "1.125rem",
-              color: "#a1a1aa",
-              lineHeight: 1.7,
-              maxWidth: 520,
-              marginBottom: "2.75rem",
-            }}
-          >
-            One config file. Two tools. Load test your API to find where it breaks —
-            or spin up a mock server so frontend developers can build without waiting
-            for the real backend. Both read the same OpenAPI spec.
-          </motion.p>
-
-          {/* Install one-liner — OS detected */}
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.24 }}
-          >
-            {/* OS tabs */}
-            <div
-              style={{
-                display: "inline-flex",
-                gap: 2,
-                background: "#111113",
-                border: "1px solid #1c1c1f",
-                borderRadius: 8,
-                padding: 3,
-                marginBottom: "0.75rem",
-              }}
-            >
-              {(["linux", "mac", "windows"] as OS[]).map((o) => (
-                <button
-                  key={o}
-                  onClick={() => setTab(o)}
-                  style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 500,
-                    padding: "0.25rem 0.625rem",
-                    borderRadius: 5,
-                    border: "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    background: tab === o ? "#27272a" : "none",
-                    color: tab === o ? "#fafafa" : "#52525b",
-                  }}
-                >
-                  {o === "linux" ? "Linux" : o === "mac" ? "macOS" : "Windows"}
-                  {o === os && (
-                    <span style={{ marginLeft: "0.375rem", fontSize: "0.6rem", color: "#f97316" }}>your system</span>
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Command box */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                background: "#0a0a0c",
-                border: "1px solid #1c1c1f",
-                borderRadius: 10,
-                padding: "0.875rem 1rem",
-                maxWidth: 620,
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46", flexShrink: 0 }}>
-                {tab === "windows" ? "PS>" : "$"}
-              </span>
-              <code
-                style={{
-                  flex: 1,
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.8125rem",
-                  color: "#a1a1aa",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {activeCmd.cmd}
-              </code>
-              <CopyButton text={activeCmd.cmd} />
-            </div>
-
-            <p style={{ marginTop: "0.625rem", fontSize: "0.75rem", color: "#3f3f46" }}>
-              {activeCmd.label} · No compiler required.{" "}
-              <Link href="/install" style={{ color: "#52525b", textDecoration: "underline", textUnderlineOffset: 3 }}>
-                All platforms →
-              </Link>
-            </p>
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.32 }}
-            style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginTop: "2rem" }}
-          >
-            <Link
-              href="/docs"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.375rem",
-                background: "linear-gradient(120deg, #f97316, #fbbf24)",
-                color: "#09090b",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-                boxShadow: "0 0 32px rgba(249,115,22,0.25)",
-                transition: "opacity 0.15s",
-              }}
-              className="btn-primary"
-            >
-              Read the docs
-            </Link>
-            <a
-              href="https://github.com/Walon-Foundation/blast"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.25rem",
-                background: "none",
-                border: "1px solid #27272a",
-                color: "#71717a",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                textDecoration: "none",
-                transition: "border-color 0.15s, color 0.15s",
-              }}
-              className="btn-secondary"
-            >
-              GitHub
-            </a>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Stats ─────────────────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", borderBottom: "1px solid #1c1c1f", background: "#111113" }}>
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          variants={stagger}
-          style={{
-            maxWidth: 1100,
-            margin: "0 auto",
-            padding: "0 1.5rem",
-            display: "flex",
-            flexWrap: "wrap",
-          }}
-        >
-          {STATS.map((s, i) => (
+        <div className="relative max-w-[1100px] mx-auto grid grid-cols-2 gap-16 items-center max-[860px]:grid-cols-1 max-[860px]:gap-10">
+          {/* Left — text */}
+          <div>
+            {/* Version badge */}
             <motion.div
-              key={s.label}
-              variants={up}
-              style={{
-                flex: "1 1 120px",
-                padding: "1.25rem 1.5rem",
-                borderLeft: i > 0 ? "1px solid #1c1c1f" : "none",
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.2rem",
-              }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-accent bg-accent/8 border border-accent/18 rounded-full px-3 py-[0.2rem] mb-8 tracking-[0.01em]"
             >
-              <span
-                className="gradient-text"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
-                }}
-              >
-                {s.value}
-              </span>
-              <span style={{ fontSize: "0.8125rem", color: "#52525b" }}>{s.label}</span>
+              <span className="w-[5px] h-[5px] rounded-full bg-accent inline-block" />
+              v0.1.1 · stable
             </motion.div>
-          ))}
-        </motion.div>
-      </section>
 
-      {/* ── Terminal demo ──────────────────────────────── */}
-      <section style={{ padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 800, margin: "0 auto" }}>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#3f3f46",
-              marginBottom: "1.25rem",
-            }}
-          >
-            See it in action
-          </motion.p>
+            {/* Headline */}
+            <motion.h1
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.08 }}
+              className="text-[clamp(2.5rem,5vw,4rem)] font-extrabold tracking-[-0.045em] leading-[1.06] text-hi mb-5"
+            >
+              Load test your API.{" "}
+              <span className="gradient-text">Find the limit.</span>
+            </motion.h1>
 
+            {/* Subtitle */}
+            <motion.p
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.16 }}
+              className="text-base text-[#71717a] leading-[1.75] mb-10 max-w-[420px]"
+            >
+              One OpenAPI spec. Run load tests to find where your API breaks — or spin up a mock server so frontend devs can build right now.
+            </motion.p>
+
+            {/* Install one-liner — OS detected */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.24 }}
+            >
+              {/* OS tabs */}
+              <div className="inline-flex gap-0.5 bg-surface border border-line rounded-lg p-[3px] mb-3">
+                {(["linux", "mac", "windows"] as OS[]).map((o) => (
+                  <button
+                    key={o}
+                    onClick={() => setTab(o)}
+                    className={cn(
+                      "text-xs font-medium px-2.5 py-1 rounded-[5px] border-none cursor-pointer transition-all duration-150",
+                      tab === o ? "bg-rim text-hi" : "bg-transparent text-lo"
+                    )}
+                  >
+                    {o === "linux" ? "Linux" : o === "mac" ? "macOS" : "Windows"}
+                    {o === os && (
+                      <span className="ml-1.5 text-[0.6rem] text-accent">your system</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Command box */}
+              <div className="flex items-center gap-3 bg-[#0a0a0c] border border-line rounded-[10px] px-4 py-[0.875rem]">
+                <span className="font-mono text-xs text-mute shrink-0">
+                  {tab === "windows" ? "PS>" : "$"}
+                </span>
+                <code className="flex-1 font-mono text-[0.8125rem] text-mid overflow-hidden text-ellipsis whitespace-nowrap">
+                  {activeCmd.cmd}
+                </code>
+                <CopyButton text={activeCmd.cmd} />
+              </div>
+
+              <p className="mt-[0.625rem] text-xs text-mute">
+                {activeCmd.label} · No compiler required.{" "}
+                <Link href="/install" className="text-lo underline underline-offset-[3px]">
+                  All platforms →
+                </Link>
+              </p>
+            </motion.div>
+
+            {/* CTAs */}
+            <motion.div
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, delay: 0.32 }}
+              className="flex gap-3 flex-wrap mt-8"
+            >
+              <Link
+                href="/docs"
+                className="inline-flex items-center h-[42px] px-[1.375rem] bg-[linear-gradient(120deg,var(--color-accent),var(--color-warm))] text-canvas rounded-lg text-sm font-bold no-underline tracking-[-0.01em] shadow-[0_0_32px_rgba(249,115,22,0.25)] hover:opacity-88 transition-opacity duration-150"
+              >
+                Read the docs
+              </Link>
+              <a
+                href="https://github.com/Walon-Foundation/blast"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center h-[42px] px-5 bg-transparent border border-rim text-[#71717a] rounded-lg text-sm font-medium no-underline transition-[border-color,color] duration-150 hover:border-mute hover:text-hi"
+              >
+                GitHub
+              </a>
+            </motion.div>
+          </div>
+
+          {/* Right — terminal */}
           <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            style={{
-              background: "#0a0a0c",
-              border: "1px solid #1c1c1f",
-              borderRadius: 10,
-              overflow: "hidden",
-              boxShadow: "0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.025)",
-            }}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.65, delay: 0.2 }}
+            className="bg-[#0a0a0c] border border-line rounded-xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.03)] max-[860px]:hidden"
           >
             {/* Title bar */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "0.75rem 1rem",
-                borderBottom: "1px solid #111113",
-                background: "rgba(255,255,255,0.015)",
-              }}
-            >
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
-              <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-              <span
-                style={{
-                  marginLeft: "0.625rem",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "0.75rem",
-                  color: "#3f3f46",
-                }}
-              >
-                bash
+            <div className="flex items-center gap-1.5 px-4 py-3 border-b border-surface bg-[rgba(255,255,255,0.015)]">
+              <span className="w-[11px] h-[11px] rounded-full bg-err" />
+              <span className="w-[11px] h-[11px] rounded-full bg-caution" />
+              <span className="w-[11px] h-[11px] rounded-full bg-[#28ca42]" />
+              <span className="ml-[0.625rem] font-mono text-xs text-mute">
+                blast
               </span>
             </div>
-
             {/* Output */}
-            <pre
-              style={{
-                padding: "1.5rem 1.75rem",
-                fontFamily: "var(--font-mono)",
-                fontSize: "0.8125rem",
-                lineHeight: 1.9,
-                overflowX: "auto",
-              }}
-            >
+            <pre className="px-6 py-5 font-mono text-[0.8rem] leading-[1.9] overflow-x-auto m-0">
               {DEMO.map((line, i) => (
-                <div key={i} style={demoStyle(line.t)}>
+                <div key={i} className={demoClassName(line.t)}>
                   {line.text || " "}
                 </div>
               ))}
@@ -508,19 +307,48 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Stats ─────────────────────────────────────── */}
+      <section className="border-t border-line border-b border-b-line bg-surface">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true }}
+          variants={stagger}
+          className="max-w-[1100px] mx-auto px-6 flex flex-wrap"
+        >
+          {STATS.map((s, i) => (
+            <motion.div
+              key={s.label}
+              variants={up}
+              className={cn(
+                "flex-[1_1_120px] px-6 py-5 flex flex-col gap-[0.2rem]",
+                i > 0 ? "border-l border-line" : ""
+              )}
+            >
+              <span
+                className="gradient-text font-mono text-2xl font-bold tracking-[-0.03em]"
+              >
+                {s.value}
+              </span>
+              <span className="text-[0.8125rem] text-lo">{s.label}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
       {/* ── Two tools ──────────────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <section className="border-t border-line px-6 py-20">
+        <div className="max-w-[1100px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ marginBottom: "3rem" }}
+            className="mb-12"
           >
-            <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.875rem" }}>
+            <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.875rem]">
               What blast does
             </p>
-            <h2 style={{ fontSize: "clamp(1.75rem, 3vw, 2.25rem)", fontWeight: 700, letterSpacing: "-0.035em", color: "#fafafa", lineHeight: 1.15 }}>
+            <h2 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-[-0.035em] text-hi leading-[1.15]">
               One spec. Two tools.
             </h2>
           </motion.div>
@@ -530,72 +358,63 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.08 }}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "1px",
-              background: "#1c1c1f",
-              border: "1px solid #1c1c1f",
-              borderRadius: 10,
-              overflow: "hidden",
-            }}
-            className="two-tools-grid"
+            className="grid grid-cols-2 gap-px bg-line border border-line rounded-[10px] overflow-hidden max-[700px]:grid-cols-1"
           >
             {/* Panel 1 — Load testing */}
-            <div style={{ background: "#09090b", padding: "2.25rem 2rem" }}>
-              <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.625rem" }}>
+            <div className="bg-canvas px-8 py-9 max-[700px]:border-b max-[700px]:border-line">
+              <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.625rem]">
                 For engineers &amp; QA
               </p>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.025em", color: "#fafafa", marginBottom: "0.75rem", lineHeight: 1.2 }}>
+              <h3 className="text-xl font-bold tracking-[-0.025em] text-hi mb-3 leading-[1.2]">
                 Find where your API breaks
               </h3>
-              <p style={{ fontSize: "0.9rem", color: "#71717a", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+              <p className="text-[0.9rem] text-[#71717a] leading-[1.7] mb-6">
                 Fixed-RPS load tests, stress ramps, and per-second live stats. blast tells you the exact RPS where p99 crosses 500ms or errors appear — then stops automatically.
               </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem 0" }}>
+              <ul className="list-none p-0 m-0 mb-6">
                 {[
                   "OpenAPI spec as config — no extra files",
                   "Fake data generation for realistic traffic",
                   "Request chaining via JSON extraction",
                   "p50/p95/p99/p999 percentile reports",
                 ].map((item) => (
-                  <li key={item} style={{ fontSize: "0.875rem", color: "#a1a1aa", paddingLeft: "1.25rem", position: "relative", marginBottom: "0.4rem" }}>
-                    <span style={{ position: "absolute", left: 0, color: "#3f3f46" }}>—</span>
+                  <li key={item} className="text-sm text-mid pl-5 relative mb-[0.4rem]">
+                    <span className="absolute left-0 text-mute">—</span>
                     {item}
                   </li>
                 ))}
               </ul>
-              <Link href="/docs" style={{ fontSize: "0.875rem", color: "#a1a1aa", textDecoration: "none" }} className="panel-link">
+              <Link href="/docs" className="text-sm text-mid no-underline hover:text-hi transition-colors duration-150">
                 Read the load testing docs →
               </Link>
             </div>
 
             {/* Panel 2 — Mock server */}
-            <div style={{ background: "#09090b", padding: "2.25rem 2rem", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, #f97316, transparent)" }} />
-              <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.625rem" }}>
+            <div className="bg-canvas px-8 py-9 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-[linear-gradient(90deg,var(--color-accent),transparent)]" />
+              <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.625rem]">
                 For frontend developers
               </p>
-              <h3 style={{ fontSize: "1.25rem", fontWeight: 700, letterSpacing: "-0.025em", color: "#fafafa", marginBottom: "0.75rem", lineHeight: 1.2 }}>
+              <h3 className="text-xl font-bold tracking-[-0.025em] text-hi mb-3 leading-[1.2]">
                 Build UI without the backend
               </h3>
-              <p style={{ fontSize: "0.9rem", color: "#71717a", lineHeight: 1.7, marginBottom: "1.5rem" }}>
+              <p className="text-[0.9rem] text-[#71717a] leading-[1.7] mb-6">
                 blast mock reads your OpenAPI spec and starts a local HTTP server in seconds. Every endpoint returns realistic fake data so you can build and iterate without waiting for the backend to be ready.
               </p>
-              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 1.5rem 0" }}>
+              <ul className="list-none p-0 m-0 mb-6">
                 {[
                   "One command, all your routes mounted",
                   "Responses shaped by your OpenAPI schemas",
                   "Same spec the backend tests against",
                   "No stubs, no mocking libraries, no configuration",
                 ].map((item) => (
-                  <li key={item} style={{ fontSize: "0.875rem", color: "#a1a1aa", paddingLeft: "1.25rem", position: "relative", marginBottom: "0.4rem" }}>
-                    <span style={{ position: "absolute", left: 0, color: "#3f3f46" }}>—</span>
+                  <li key={item} className="text-sm text-mid pl-5 relative mb-[0.4rem]">
+                    <span className="absolute left-0 text-mute">—</span>
                     {item}
                   </li>
                 ))}
               </ul>
-              <Link href="/docs#cmd-mock" style={{ fontSize: "0.875rem", color: "#f97316", textDecoration: "none" }} className="panel-link-accent">
+              <Link href="/docs#cmd-mock" className="text-sm text-accent no-underline hover:text-warm transition-colors duration-150">
                 Learn about blast mock →
               </Link>
             </div>
@@ -604,21 +423,21 @@ export default function Home() {
       </section>
 
       {/* ── Mock server demo ───────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <section className="border-t border-line px-6 py-20">
+        <div className="max-w-[1100px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ marginBottom: "2.5rem" }}
+            className="mb-10"
           >
-            <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.875rem" }}>
+            <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.875rem]">
               blast mock
             </p>
-            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 700, letterSpacing: "-0.03em", color: "#fafafa", lineHeight: 1.15, marginBottom: "0.75rem" }}>
+            <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.03em] text-hi leading-[1.15] mb-3">
               A real server from a spec file.
             </h2>
-            <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, maxWidth: 480 }}>
+            <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] max-w-[480px]">
               Run blast mock and every path in your OpenAPI spec becomes a live endpoint returning schema-shaped fake data. Point your frontend at localhost and ship.
             </p>
           </motion.div>
@@ -628,69 +447,38 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}
-            className="mock-demo-grid"
+            className="max-w-[680px] mx-auto"
           >
-            {/* Terminal 1: blast mock output */}
-            <div style={{ background: "#0a0a0c", border: "1px solid #1c1c1f", borderRadius: 10, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.75rem 1rem", borderBottom: "1px solid #111113", background: "rgba(255,255,255,0.015)" }}>
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-                <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>bash</span>
+            <div className="bg-[#0a0a0c] border border-line rounded-[10px] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.5),0_0_0_1px_rgba(255,255,255,0.025)]">
+              <div className="flex items-center gap-1.5 px-4 py-3 border-b border-surface bg-[rgba(255,255,255,0.015)]">
+                <span className="w-[11px] h-[11px] rounded-full bg-err" />
+                <span className="w-[11px] h-[11px] rounded-full bg-caution" />
+                <span className="w-[11px] h-[11px] rounded-full bg-[#28ca42]" />
+                <span className="ml-[0.625rem] font-mono text-xs text-mute">blast</span>
               </div>
-              <pre style={{ padding: "1.25rem 1.5rem", fontFamily: "var(--font-mono)", fontSize: "0.8rem", lineHeight: 1.9, overflowX: "auto", margin: 0 }}>
+              <pre className="px-7 py-6 font-mono text-[0.8125rem] leading-[1.9] overflow-x-auto m-0">
                 {[
-                  { t: "cmd",   text: "$ blast mock --port 4000" },
-                  { t: "blank", text: "" },
-                  { t: "dim",   text: "  Loaded openapi.json" },
-                  { t: "blank", text: "" },
-                  { t: "ok",    text: "  GET    /api/v1/users               200" },
-                  { t: "ok",    text: "  POST   /api/v1/auth/register       201" },
-                  { t: "ok",    text: "  POST   /api/v1/auth/login          200" },
-                  { t: "ok",    text: "  GET    /api/v1/users/{id}          200" },
-                  { t: "ok",    text: "  DELETE /api/v1/users/{id}          204" },
-                  { t: "blank", text: "" },
-                  { t: "pass",  text: "  5 routes mounted" },
-                  { t: "accent",text: "  Listening on http://localhost:4000" },
+                  { t: "cmd",    text: "$ blast mock --port 4000" },
+                  { t: "blank",  text: "" },
+                  { t: "dim",    text: "  Loaded openapi.json" },
+                  { t: "blank",  text: "" },
+                  { t: "ok",     text: "  GET    /api/v1/users               200" },
+                  { t: "ok",     text: "  POST   /api/v1/auth/register       201" },
+                  { t: "ok",     text: "  POST   /api/v1/auth/login          200" },
+                  { t: "ok",     text: "  GET    /api/v1/users/{id}          200" },
+                  { t: "ok",     text: "  DELETE /api/v1/users/{id}          204" },
+                  { t: "blank",  text: "" },
+                  { t: "pass",   text: "  5 routes mounted" },
+                  { t: "accent", text: "  Listening on http://localhost:4000" },
                 ].map((line, i) => (
-                  <div key={i} style={
-                    line.t === "cmd"    ? { color: "#fafafa" } :
-                    line.t === "dim"    ? { color: "#52525b" } :
-                    line.t === "ok"     ? { color: "#86efac" } :
-                    line.t === "pass"   ? { color: "#86efac", fontWeight: 600 } :
-                    line.t === "accent" ? { color: "#f97316" } :
-                    { color: "transparent", userSelect: "none" as const }
-                  }>{line.text || " "}</div>
-                ))}
-              </pre>
-            </div>
-
-            {/* Terminal 2: curl against mock */}
-            <div style={{ background: "#0a0a0c", border: "1px solid #1c1c1f", borderRadius: 10, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "0.75rem 1rem", borderBottom: "1px solid #111113", background: "rgba(255,255,255,0.015)" }}>
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ff5f57" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ffbd2e" }} />
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#28ca42" }} />
-                <span style={{ marginLeft: "0.625rem", fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "#3f3f46" }}>bash</span>
-              </div>
-              <pre style={{ padding: "1.25rem 1.5rem", fontFamily: "var(--font-mono)", fontSize: "0.8rem", lineHeight: 1.9, overflowX: "auto", margin: 0 }}>
-                {[
-                  { t: "cmd",      text: "$ curl http://localhost:4000/api/v1/users" },
-                  { t: "blank",    text: "" },
-                  { t: "json",     text: '  {' },
-                  { t: "json",     text: '    "data": [' },
-                  { t: "json-val", text: '      { "id": "a3f2c1d8", "email": "jane@example.com" },' },
-                  { t: "json-val", text: '      { "id": "b7c14e22", "email": "john@example.com" }' },
-                  { t: "json",     text: '    ]' },
-                  { t: "json",     text: '  }' },
-                ].map((line, i) => (
-                  <div key={i} style={
-                    line.t === "cmd"      ? { color: "#fafafa" } :
-                    line.t === "json"     ? { color: "#52525b" } :
-                    line.t === "json-val" ? { color: "#86efac" } :
-                    { color: "transparent", userSelect: "none" as const }
-                  }>{line.text || " "}</div>
+                  <div key={i} className={cn(
+                    line.t === "cmd"    ? "text-hi" :
+                    line.t === "dim"    ? "text-lo" :
+                    line.t === "ok"     ? "text-ok" :
+                    line.t === "pass"   ? "text-ok font-semibold" :
+                    line.t === "accent" ? "text-accent" :
+                    "text-transparent select-none"
+                  )}>{line.text || " "}</div>
                 ))}
               </pre>
             </div>
@@ -699,21 +487,21 @@ export default function Home() {
       </section>
 
       {/* ── Comparison ─────────────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <section className="border-t border-line px-6 py-20">
+        <div className="max-w-[900px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ marginBottom: "2.5rem" }}
+            className="mb-10"
           >
-            <p style={{ fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "#3f3f46", marginBottom: "0.875rem" }}>
+            <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.875rem]">
               Why blast
             </p>
-            <h2 style={{ fontSize: "clamp(1.5rem, 3vw, 2.25rem)", fontWeight: 800, letterSpacing: "-0.04em", color: "#fafafa", marginBottom: "0.75rem", lineHeight: 1.15 }}>
+            <h2 className="text-[clamp(1.5rem,3vw,2.25rem)] font-extrabold tracking-[-0.04em] text-hi mb-3 leading-[1.15]">
               Built for API contracts, not scripts.
             </h2>
-            <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, maxWidth: 540 }}>
+            <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] max-w-[540px]">
               Most load tools require you to write code. blast reads the spec your team already has.
             </p>
           </motion.div>
@@ -724,11 +512,11 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
           >
-            <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid #1c1c1f" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+            <div className="overflow-x-auto rounded-[10px] border border-line">
+              <table className="w-full border-collapse min-w-[520px]">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #1c1c1f" }}>
-                    <th style={{ textAlign: "left", padding: "0.875rem 1.25rem", fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#3f3f46", width: "40%" }}>
+                  <tr className="border-b border-line">
+                    <th className="text-left px-5 py-[0.875rem] text-xs font-semibold tracking-[0.06em] uppercase text-mute w-[40%]">
                       Feature
                     </th>
                     {[
@@ -739,15 +527,10 @@ export default function Home() {
                     ].map((tool) => (
                       <th
                         key={tool.name}
-                        style={{
-                          textAlign: "center",
-                          padding: "0.875rem 1rem",
-                          fontSize: "0.75rem",
-                          fontWeight: 700,
-                          letterSpacing: "0.04em",
-                          color: tool.accent ? "#f97316" : "#52525b",
-                          fontFamily: "var(--font-mono)",
-                        }}
+                        className={cn(
+                          "text-center px-4 py-[0.875rem] text-xs font-bold tracking-[0.04em] font-mono",
+                          tool.accent ? "text-accent" : "text-lo"
+                        )}
                       >
                         {tool.name}
                       </th>
@@ -758,17 +541,17 @@ export default function Home() {
                   {COMPARE_ROWS.map((row, i) => (
                     <tr
                       key={row.feature}
-                      style={{ borderBottom: i < COMPARE_ROWS.length - 1 ? "1px solid #111113" : "none" }}
+                      className={i < COMPARE_ROWS.length - 1 ? "border-b border-surface" : ""}
                     >
-                      <td style={{ padding: "0.75rem 1.25rem", fontSize: "0.875rem", color: "#a1a1aa" }}>
+                      <td className="px-5 py-3 text-sm text-mid">
                         {row.feature}
                       </td>
                       {([row.blast, row.k6, row.wrk, row.ab] as boolean[]).map((has, ci) => (
-                        <td key={ci} style={{ textAlign: "center", padding: "0.75rem 1rem" }}>
+                        <td key={ci} className="text-center px-4 py-3">
                           {has ? (
-                            <span style={{ color: ci === 0 ? "#f97316" : "#52525b", fontSize: "0.9rem", fontWeight: 700 }}>&#10003;</span>
+                            <span className={cn("text-[0.9rem] font-bold", ci === 0 ? "text-accent" : "text-lo")}>&#10003;</span>
                           ) : (
-                            <span style={{ color: "#27272a", fontSize: "0.9rem" }}>&#8212;</span>
+                            <span className="text-rim text-[0.9rem]">&#8212;</span>
                           )}
                         </td>
                       ))}
@@ -777,7 +560,7 @@ export default function Home() {
                 </tbody>
               </table>
             </div>
-            <p style={{ fontSize: "0.75rem", color: "#27272a", marginTop: "0.75rem", textAlign: "right" }}>
+            <p className="text-xs text-rim mt-3 text-right">
               k6 requires JS. wrk requires Lua for anything beyond GETs. ab has no auth or body support.
             </p>
           </motion.div>
@@ -785,39 +568,21 @@ export default function Home() {
       </section>
 
       {/* ── Roadmap ────────────────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <section className="border-t border-line px-6 py-20">
+        <div className="max-w-[720px] mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            style={{ marginBottom: "2.5rem" }}
+            className="mb-10"
           >
-            <p
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 600,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "#3f3f46",
-                marginBottom: "0.875rem",
-              }}
-            >
+            <p className="text-[0.6875rem] font-semibold tracking-[0.12em] uppercase text-mute mb-[0.875rem]">
               Roadmap
             </p>
-            <h2
-              style={{
-                fontSize: "clamp(1.5rem, 3vw, 2rem)",
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
-                color: "#fafafa",
-                lineHeight: 1.15,
-                marginBottom: "0.625rem",
-              }}
-            >
+            <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.03em] text-hi leading-[1.15] mb-[0.625rem]">
               What&apos;s shipping next.
             </h2>
-            <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, maxWidth: 420 }}>
+            <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] max-w-[420px]">
               Core load testing and fake data are stable and shipped. Mock server is in active development.
             </p>
           </motion.div>
@@ -827,146 +592,77 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            style={{
-              border: "1px solid #1c1c1f",
-              borderRadius: 10,
-              overflow: "hidden",
-            }}
+            className="border border-line rounded-[10px] overflow-hidden"
           >
-            {ROADMAP.map((item, i) => {
-              const s = STATUS_META[item.status];
-              return (
-                <div
-                  key={item.label}
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "1rem",
-                    padding: "1rem 1.25rem",
-                    borderBottom: i < ROADMAP.length - 1 ? "1px solid #1c1c1f" : "none",
-                    background: item.status === "done" ? "rgba(134,239,172,0.015)" : "transparent",
-                  }}
+            {ROADMAP.map((item, i) => (
+              <div
+                key={item.label}
+                className={cn(
+                  "flex items-start gap-4 px-5 py-4",
+                  i < ROADMAP.length - 1 ? "border-b border-line" : "",
+                  item.status === "done" ? "bg-[rgba(134,239,172,0.015)]" : "bg-transparent"
+                )}
+              >
+                <span
+                  className={cn(
+                    "shrink-0 mt-[0.1rem] text-[0.6rem] font-bold tracking-[0.07em] uppercase rounded px-[0.45rem] py-[0.2rem] border text-center",
+                    "min-w-[80px]",
+                    item.status === "done"
+                      ? "text-ok bg-ok/7 border-ok/18"
+                      : item.status === "in-progress"
+                      ? "text-accent bg-accent/7 border-accent/20"
+                      : "text-mute bg-mute/7 border-mute/25"
+                  )}
                 >
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      marginTop: "0.1rem",
-                      fontSize: "0.6rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.07em",
-                      textTransform: "uppercase",
-                      color: s.color,
-                      background: s.bg,
-                      border: `1px solid ${s.border}`,
-                      borderRadius: 4,
-                      padding: "0.2rem 0.45rem",
-                      minWidth: 80,
-                      textAlign: "center",
-                    }}
+                  {item.status === "done" ? "done" : item.status === "in-progress" ? "in progress" : "planned"}
+                </span>
+                <div>
+                  <p
+                    className={cn(
+                      "text-sm font-semibold mb-[0.2rem] tracking-[-0.01em]",
+                      item.status === "done" ? "text-lo line-through" : "text-hi"
+                    )}
                   >
-                    {s.label}
-                  </span>
-                  <div>
-                    <p
-                      style={{
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
-                        color: item.status === "done" ? "#52525b" : "#fafafa",
-                        marginBottom: "0.2rem",
-                        textDecoration: item.status === "done" ? "line-through" : "none",
-                        letterSpacing: "-0.01em",
-                      }}
-                    >
-                      {item.label}
-                    </p>
-                    <p style={{ fontSize: "0.8125rem", color: "#3f3f46", lineHeight: 1.6 }}>{item.desc}</p>
-                  </div>
+                    {item.label}
+                  </p>
+                  <p className="text-[0.8125rem] text-mute leading-[1.6]">{item.desc}</p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </motion.div>
         </div>
       </section>
 
       {/* ── Bottom CTA ─────────────────────────────────── */}
-      <section style={{ borderTop: "1px solid #1c1c1f", padding: "5rem 1.5rem" }}>
+      <section className="border-t border-line px-6 py-20">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          style={{ maxWidth: 560, margin: "0 auto", textAlign: "center" }}
+          className="max-w-[560px] mx-auto text-center"
         >
-          <h2
-            style={{
-              fontSize: "clamp(1.5rem, 3vw, 2rem)",
-              fontWeight: 700,
-              letterSpacing: "-0.03em",
-              color: "#fafafa",
-              marginBottom: "0.875rem",
-              lineHeight: 1.15,
-            }}
-          >
+          <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.03em] text-hi mb-[0.875rem] leading-[1.15]">
             One spec. Two tools. Ship faster.
           </h2>
-          <p style={{ fontSize: "0.9375rem", color: "#71717a", lineHeight: 1.7, marginBottom: "2rem" }}>
+          <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] mb-8">
             Load test your API and mock it for frontend development — both from the same OpenAPI file.
           </p>
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}>
+          <div className="flex gap-3 justify-center flex-wrap">
             <Link
               href="/docs"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.375rem",
-                background: "linear-gradient(120deg, #f97316, #fbbf24)",
-                color: "#09090b",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 700,
-                textDecoration: "none",
-                letterSpacing: "-0.01em",
-                boxShadow: "0 0 32px rgba(249,115,22,0.2)",
-              }}
-              className="btn-primary"
+              className="inline-flex items-center h-[42px] px-[1.375rem] bg-[linear-gradient(120deg,var(--color-accent),var(--color-warm))] text-canvas rounded-lg text-sm font-bold no-underline tracking-[-0.01em] shadow-[0_0_32px_rgba(249,115,22,0.2)] hover:opacity-88 transition-opacity duration-150"
             >
               Get started
             </Link>
             <Link
               href="/install"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: 42,
-                padding: "0 1.25rem",
-                background: "none",
-                border: "1px solid #27272a",
-                color: "#71717a",
-                borderRadius: 8,
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-              className="btn-secondary"
+              className="inline-flex items-center h-[42px] px-5 bg-transparent border border-rim text-[#71717a] rounded-lg text-sm font-medium no-underline transition-[border-color,color] duration-150 hover:border-mute hover:text-hi"
             >
               Install guide
             </Link>
           </div>
         </motion.div>
       </section>
-
-      <style>{`
-        .btn-primary:hover { opacity: 0.88; }
-        .btn-secondary:hover { border-color: #3f3f46 !important; color: #fafafa !important; }
-        .copy-btn-wrap:hover { border-color: #3f3f46 !important; color: #a1a1aa !important; }
-        .panel-link:hover { color: #fafafa !important; }
-        .panel-link-accent:hover { color: #fbbf24 !important; }
-        @media (max-width: 700px) {
-          .two-tools-grid { grid-template-columns: 1fr !important; }
-          .two-tools-grid > div:first-child { border-bottom: 1px solid #1c1c1f; }
-          .mock-demo-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </main>
   );
 }

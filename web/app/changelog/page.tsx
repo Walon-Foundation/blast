@@ -16,13 +16,13 @@ export const metadata: Metadata = {
 
 type Badge = "feat" | "fix" | "chore" | "docs" | "ci" | "perf";
 
-const BADGE_COLORS: Record<Badge, { bg: string; color: string }> = {
-  feat:  { bg: "#1a1f2e", color: "#93c5fd" },
-  fix:   { bg: "#1f1a1a", color: "#fca5a5" },
-  chore: { bg: "#1a1a1a", color: "#a1a1aa" },
-  docs:  { bg: "#1a1f1a", color: "#86efac" },
-  ci:    { bg: "#1f1a2e", color: "#c4b5fd" },
-  perf:  { bg: "#1f1e1a", color: "#fde68a" },
+const BADGE_CLASSES: Record<Badge, string> = {
+  feat:  "bg-[#1a1f2e] text-[#93c5fd]",
+  fix:   "bg-[#1f1a1a] text-[#fca5a5]",
+  chore: "bg-[#1a1a1a] text-mid",
+  docs:  "bg-[#1a1f1a] text-ok",
+  ci:    "bg-[#1f1a2e] text-[#c4b5fd]",
+  perf:  "bg-[#1f1e1a] text-[#fde68a]",
 };
 
 interface Entry {
@@ -70,21 +70,9 @@ const RELEASES: Release[] = [
 ];
 
 function TypeBadge({ type }: { type: Badge }) {
-  const c = BADGE_COLORS[type];
   return (
     <span
-      style={{
-        display: "inline-block",
-        padding: "0.1em 0.5em",
-        borderRadius: 4,
-        fontSize: "0.6875rem",
-        fontWeight: 600,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        background: c.bg,
-        color: c.color,
-        flexShrink: 0,
-      }}
+      className={`inline-block shrink-0 rounded px-[0.5em] py-[0.1em] text-[0.6875rem] font-semibold uppercase tracking-[0.06em] ${BADGE_CLASSES[type]}`}
     >
       {type}
     </span>
@@ -93,102 +81,38 @@ function TypeBadge({ type }: { type: Badge }) {
 
 export default function ChangelogPage() {
   return (
-    <main
-      style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: "4rem 1.5rem 8rem",
-      }}
-    >
-      <h1
-        style={{
-          fontSize: "1.875rem",
-          fontWeight: 700,
-          letterSpacing: "-0.03em",
-          color: "#fafafa",
-          marginBottom: "0.5rem",
-        }}
-      >
+    <main className="max-w-[720px] mx-auto px-6 pt-16 pb-32">
+      <h1 className="text-3xl font-bold tracking-[-0.03em] text-hi mb-2">
         Changelog
       </h1>
-      <p
-        style={{
-          color: "#71717a",
-          fontSize: "0.9375rem",
-          marginBottom: "3.5rem",
-          lineHeight: 1.6,
-        }}
-      >
+      <p className="text-[#71717a] text-[0.9375rem] mb-14 leading-[1.6]">
         All notable changes to blast, newest first.
       </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "3rem" }}>
+      <div className="flex flex-col gap-12">
         {RELEASES.map((rel) => (
           <section key={rel.version}>
             {/* Header */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                marginBottom: "1.25rem",
-                paddingBottom: "1rem",
-                borderBottom: "1px solid #1c1c1f",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: "1.125rem",
-                  fontWeight: 700,
-                  color: "#fafafa",
-                  letterSpacing: "-0.02em",
-                }}
-              >
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-line">
+              <span className="font-mono text-lg font-bold text-hi tracking-[-0.02em]">
                 {rel.version}
               </span>
               {rel.latest && (
-                <span
-                  style={{
-                    padding: "0.15em 0.6em",
-                    borderRadius: 999,
-                    fontSize: "0.6875rem",
-                    fontWeight: 600,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    background: "rgba(249,115,22,0.12)",
-                    color: "#fb923c",
-                    border: "1px solid rgba(249,115,22,0.25)",
-                  }}
-                >
+                <span className="px-[0.6em] py-[0.15em] rounded-full text-[0.6875rem] font-semibold uppercase tracking-[0.06em] bg-accent/12 text-[#fb923c] border border-accent/25">
                   latest
                 </span>
               )}
-              <span
-                style={{
-                  marginLeft: "auto",
-                  fontSize: "0.8125rem",
-                  color: "#3f3f46",
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
+              <span className="ml-auto text-[0.8125rem] text-mute font-mono">
                 {rel.date}
               </span>
             </div>
 
             {/* Entries */}
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <ul className="list-none p-0 m-0 flex flex-col gap-[0.625rem]">
               {rel.entries.map((e, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "baseline",
-                    gap: "0.75rem",
-                  }}
-                >
+                <li key={i} className="flex items-baseline gap-3">
                   <TypeBadge type={e.type} />
-                  <span style={{ fontSize: "0.9rem", color: "#a1a1aa", lineHeight: 1.6 }}>
+                  <span className="text-[0.9rem] text-mid leading-[1.6]">
                     {e.text}
                   </span>
                 </li>

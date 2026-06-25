@@ -7,83 +7,29 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "4rem 1.5rem",
-        textAlign: "center",
-        minHeight: "60vh",
-      }}
-    >
-      <p
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "clamp(5rem, 15vw, 9rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.06em",
-          lineHeight: 1,
-          color: "#1c1c1f",
-          marginBottom: "1.5rem",
-          userSelect: "none",
-        }}
-      >
+    <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center min-h-[60vh]">
+      <p className="font-mono text-[clamp(5rem,15vw,9rem)] font-extrabold tracking-[-0.06em] leading-none text-line mb-6 select-none">
         404
       </p>
 
-      <h1
-        style={{
-          fontSize: "1.25rem",
-          fontWeight: 600,
-          color: "#fafafa",
-          letterSpacing: "-0.03em",
-          marginBottom: "0.75rem",
-        }}
-      >
+      <h1 className="text-xl font-semibold text-hi tracking-[-0.03em] mb-3">
         Page not found
       </h1>
 
-      <p
-        style={{
-          fontSize: "0.9375rem",
-          color: "#52525b",
-          lineHeight: 1.6,
-          maxWidth: 360,
-          marginBottom: "2rem",
-        }}
-      >
+      <p className="text-[0.9375rem] text-lo leading-[1.6] max-w-[360px] mb-8">
         That route doesn&apos;t exist. Maybe the URL is wrong or the page was moved.
       </p>
 
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", justifyContent: "center" }}>
+      <div className="flex gap-3 flex-wrap justify-center">
         <Link
           href="/"
-          style={{
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            color: "#09090b",
-            background: "linear-gradient(120deg, #f97316, #fbbf24)",
-            padding: "0.5rem 1.25rem",
-            borderRadius: 7,
-            textDecoration: "none",
-          }}
+          className="text-sm font-semibold text-canvas bg-[linear-gradient(120deg,#f97316,#fbbf24)] px-5 py-2 rounded-[7px] no-underline"
         >
           Home
         </Link>
         <Link
           href="/docs"
-          style={{
-            fontSize: "0.875rem",
-            color: "#71717a",
-            background: "#111113",
-            border: "1px solid #1c1c1f",
-            padding: "0.5rem 1.25rem",
-            borderRadius: 7,
-            textDecoration: "none",
-          }}
+          className="text-sm text-[#71717a] bg-surface border border-line px-5 py-2 rounded-[7px] no-underline"
         >
           Docs
         </Link>

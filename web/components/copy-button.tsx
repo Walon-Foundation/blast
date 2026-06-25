@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 export function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -19,21 +20,10 @@ export function CopyButton({ text }: { text: string }) {
     <button
       onClick={copy}
       aria-label="Copy code"
-      style={{
-        position: "absolute",
-        top: 10,
-        right: 10,
-        padding: "0.25rem",
-        background: "none",
-        border: "1px solid #27272a",
-        borderRadius: 5,
-        cursor: "pointer",
-        color: copied ? "#86efac" : "#52525b",
-        opacity: 0,
-        transition: "opacity 0.15s, color 0.15s",
-        lineHeight: 0,
-      }}
-      className="copy-btn"
+      className={cn(
+        "copy-btn absolute top-[10px] right-[10px] p-1 bg-transparent border border-rim rounded-[5px] cursor-pointer opacity-0 transition-[opacity,color] duration-150 leading-none",
+        copied ? "text-ok" : "text-lo"
+      )}
     >
       {copied ? (
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
