@@ -23,12 +23,11 @@ export const metadata: Metadata = {
     template: "%s — blast",
   },
   description:
-    "blast is a fast, config-driven API load tester and mock server written in Rust. One OpenAPI spec drives load tests, stress tests, and a local mock server.",
+    "blast is a fast, config-driven API load tester and mock server written in Rust. One config file drives load tests, stress tests, and a local mock server.",
   keywords: [
     "load testing",
     "API load test",
     "mock server",
-    "OpenAPI mock",
     "stress test",
     "rust cli",
     "blast",
@@ -47,7 +46,7 @@ export const metadata: Metadata = {
     siteName: "blast",
     title: "blast — API load testing and mock server",
     description:
-      "One OpenAPI spec. Two tools. blast run fires load tests. blast mock spins up a local API server for frontend development.",
+      "One config file. Two tools. blast run fires load tests. blast mock spins up a local API server for frontend development.",
     images: [
       {
         url: "/opengraph-image",
@@ -61,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "blast — API load testing and mock server",
     description:
-      "One OpenAPI spec. blast run fires load tests. blast mock starts a local API for frontend devs.",
+      "One config file. blast run fires load tests. blast mock starts a local API for frontend devs.",
     images: ["/opengraph-image"],
   },
   alternates: {
@@ -98,7 +97,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               applicationCategory: "DeveloperApplication",
               operatingSystem: "Linux, macOS, Windows",
               description:
-                "A fast, config-driven API load tester and mock server written in Rust. One OpenAPI spec drives load tests, stress tests, and a local mock server.",
+                "A fast, config-driven API load tester and mock server written in Rust. One config file drives load tests, stress tests, and a local mock server.",
               url: "https://blast.walonfoundation.com",
               downloadUrl: "https://blast.walonfoundation.com/install",
               softwareVersion: "0.1.1",

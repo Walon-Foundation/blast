@@ -95,7 +95,7 @@ export default function OGImage() {
               lineHeight: 1.5,
             }}
           >
-            Config-driven API load testing and mock server generation from a single OpenAPI spec.
+            Config-driven API load testing and mock server. Define endpoints in blast.config.json.
           </div>
 
           {/* Command pills */}

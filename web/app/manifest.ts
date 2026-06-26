@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "blast",
     short_name: "blast",
-    description: "API load testing and mock server. One OpenAPI spec. Two tools.",
+    description: "API load testing and mock server. One config file. Two tools.",
     start_url: "/",
     display: "standalone",
     background_color: "#09090b",
