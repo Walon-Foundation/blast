@@ -2,276 +2,7 @@
 
 ---
 
-## 1. OpenAPI spec as config
-
-### Why
-
-The current `blast.config.json` is a custom format that only blast understands. OpenAPI is the standard contract format that teams already write to describe their APIs — there are editors, validators, code generators, and mock tools built around it. If blast can read an OpenAPI spec directly, teams can point blast at their existing contract file and start load testing immediately. No translation step, no maintaining two descriptions of the same API.
-
-### Result
-
-`blast` accepts either `blast.config.json` (unchanged, backward compatible) or an OpenAPI 3.x JSON/YAML file passed via `--config`. Blast-specific behaviour (tags, extraction rules, setup steps, fake data bodies) is expressed through standard OpenAPI `x-blast-*` extension fields, so the spec stays valid OpenAPI while carrying everything blast needs.
-
-Example OpenAPI operation with blast extensions:
-
-```json
-"/api/v1/auth/register": {
-  "post": {
-    "operationId": "register user",
-    "tags": ["seed"],
-    "x-blast-expect-status": 201,
-    "requestBody": {
-      "content": {
-        "application/json": {
-          "example": {
-            "email": "{{fake.email}}",
-            "password": "{{fake.password}}"
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-### How
-
-**What needs to exist**
-
-- A new set of serde structs that model just the parts of OpenAPI blast cares about
-- A converter function `openapi_to_blast_config` that produces a `BlastConfig` from those structs
-- A change to `BlastConfig::load()` so it auto-detects which format it is reading
-
-**Step 1 — model the OpenAPI subset**
-
-Create structs (in `config.rs` or a new `openapi.rs`) for:
-
-```
-OpenApiSpec
-  openapi: String          ← "3.x.x"
-  servers: Vec<Server>
-  info: Info
-  paths: HashMap<path_string, PathItem>
-
-Server
-  url: String
-
-Info
-  x-blast-headers: Option<HashMap<String, String>>    ← global headers
-
-PathItem
-  get:    Option<Operation>
-  post:   Option<Operation>
-  put:    Option<Operation>
-  patch:  Option<Operation>
-  delete: Option<Operation>
-
-Operation
-  operation_id:           Option<String>    ← becomes endpoint name
-  summary:                Option<String>    ← fallback name
-  tags:                   Option<Vec<String>>
-  request_body:           Option<RequestBody>
-  responses:              HashMap<status_code_string, ResponseObject>
-  x-blast-extract:        Option<HashMap<String, String>>
-  x-blast-setup:          Option<bool>
-  x-blast-expect-status:  Option<u16>
-
-RequestBody
-  content: HashMap<media_type, MediaTypeObject>
-
-MediaTypeObject
-  example: Option<serde_json::Value>    ← supports {{fake.*}} placeholders
-
-ResponseObject
-  // Don't define a struct for this. The keys of the responses HashMap ARE the
-  // status codes ("200", "201", etc.). Use HashMap<String, serde_json::Value>
-  // so you can walk the raw JSON later in the mock server without losing any fields.
-  responses: HashMap<String, serde_json::Value>
-```
-
-Serde rename: fields like `x-blast-extract` need `#[serde(rename = "x-blast-extract")]`.
-
-**Step 2 — write the converter**
-
-```
-fn openapi_to_blast_config(spec: OpenApiSpec) -> Result<BlastConfig>:
-
-  base_url = spec.servers.first()?.url
-
-  global_headers = spec.info["x-blast-headers"]
-
-  setup_endpoints = []
-  regular_endpoints = []
-
-  for (path_string, path_item) in spec.paths:
-    for (method, operation) in path_item.iter_operations():
-      // iter_operations yields ("GET", &op), ("POST", &op), etc.
-
-      name = operation.operation_id
-               OR operation.summary
-               OR format!("{method} {path_string}")
-
-      body = operation.request_body
-               .content["application/json"]
-               .example
-
-      expect_status = operation["x-blast-expect-status"]
-                       OR parse the first key of operation.responses as u16
-
-      endpoint = Endpoint {
-        name, method, path: path_string,
-        headers: None,
-        body,
-        expect_status,
-        extract: operation["x-blast-extract"],
-        tags:    operation.tags,
-      }
-
-      if operation["x-blast-setup"] == true:
-        setup_endpoints.push(endpoint)
-      else:
-        regular_endpoints.push(endpoint)
-
-  return BlastConfig {
-    base_url,
-    headers: global_headers,
-    setup: if setup_endpoints.is_empty() { None } else { Some(setup_endpoints) },
-    endpoints: regular_endpoints,
-  }
-```
-
-**Step 3 — auto-detect format in `BlastConfig::load()`**
-
-Two things need fixing in the existing code before adding format detection: directory resolution needs to know the new default filename, and YAML must be branched before parsing, not after.
-
-```
-fn load(path: &Path) -> Result<BlastConfig>:
-
-  // resolve directory → file
-  config_path = if path.is_dir():
-    let candidate = path.join("openapi.json")
-    if candidate.exists():
-      candidate
-    else:
-      path.join("blast.config.json")   // backward compat fallback
-  else:
-    path.to_path_buf()
-
-  content = read config_path to string
-
-  // detect format by extension BEFORE parsing
-  raw: serde_json::Value = if config_path extension is ".yaml" or ".yml":
-    serde_yaml::from_str(&content)?    // new dep: serde_yaml
-  else:
-    serde_json::from_str(&content)?
-
-  // detect schema by presence of "openapi" key
-  if raw["openapi"].is_string():
-    spec: OpenApiSpec = serde_json::from_value(raw)?
-    return openapi_to_blast_config(spec)
-  else:
-    config: BlastConfig = serde_json::from_value(raw)?
-    config.validate()?
-    return config
-```
-
-Also add a `load_raw(path: &Path) -> Result<serde_json::Value>` sibling that returns the parsed JSON/YAML before conversion — the mock server needs this to access response schemas that are lost during `openapi_to_blast_config`.
-
-**Step 4 — `CONFIG_FILENAME` and `validate_path()` in `config.rs`**
-
-`validate_path()` is only called by `create()` (the init command). It currently appends `CONFIG_FILENAME = "blast.config.json"` to the directory. Change the constant:
-
-```
-pub const CONFIG_FILENAME: &str = "openapi.json";
-```
-
-`validate_path()` itself needs no other change — it checks that the path is a directory then appends the filename. The rest of the logic stays.
-
-`load()` uses `CONFIG_FILENAME` as the fallback when a directory is given. With the new constant it tries `openapi.json` first (explicit candidate check in Step 3 above), then falls back to `blast.config.json` for people with existing configs. Old users pass `--config blast.config.json` or place it next to `openapi.json` — either works because `load()` accepts an explicit file path directly.
-
-**Step 5 — `template()` and `create()` in `config.rs`**
-
-`create()` currently calls `serde_json::to_string_pretty(&Self::template())` where `template()` returns a `BlastConfig`. That produces the old JSON format. After the change the file on disk must be OpenAPI.
-
-Add a separate function (don't touch `template()` — it may still be useful internally):
-
-```
-fn openapi_template() -> serde_json::Value:
-  // return a hardcoded serde_json::json!({...}) that is a valid OpenAPI 3.x spec
-  // with x-blast extensions, mirroring what template() currently produces
-  // but in OpenAPI shape:
-  //   openapi, info, servers, paths
-  // paths contains the health check GET (x-blast-setup: true),
-  // register user POST (tags: ["seed"], x-blast-expect-status: 201),
-  // login POST (tags: ["check","seed"], x-blast-extract: {...})
-```
-
-Change `create()` to call `openapi_template()` instead of `template()`:
-
-```
-fn create(path: &Path) -> Result<PathBuf>:
-  config_path = Self::validate_path(path)?
-  if config_path.exists(): bail!
-  contents = serde_json::to_string_pretty(&Self::openapi_template())?
-  fs::write(&config_path, contents)?
-  Ok(config_path)
-```
-
-**Step 6 — `commands/init.rs`**
-
-No code changes needed. `init.rs` calls `BlastConfig::create()` and prints the path. The only thing that changes is the message printed after creation — update the `println!` to say something like `"edit openapi.json to describe your API, then run blast check"`. The file created is now `openapi.json`.
-
-**Step 7 — `commands/validate.rs`**
-
-The load → print loop works as-is after the change because `load()` converts transparently to `BlastConfig`. The displayed info (`base_url`, endpoint list, extract rules) all comes from the converted struct so it's accurate regardless of source format.
-
-One optional improvement: peek at the file before loading to show the detected format in the header line. Currently it prints `"loading <path>... valid"`. You could change this to `"loading <path> (OpenAPI 3.x)... valid"` by reading the raw JSON and checking for the `"openapi"` key before calling `load()`. Not required — just a UX nicety.
-
-**Step 8 — `commands/check.rs`, `seed.rs`, `run.rs`, `stress.rs`**
-
-No changes. All four call `BlastConfig::load()` and receive a `BlastConfig`. The conversion is invisible to them.
-
-**Step 9 — `blast.config.json` (the example file in the repo root)**
-
-This file is the working example committed to the repository. Rename it to `openapi.json` and rewrite its contents as an OpenAPI 3.x spec with `x-blast-*` extensions that covers the same three endpoints (health check, register user, login). The old blast format fields map like this:
-
-```
-blast.config.json field           OpenAPI location
-─────────────────────────────     ────────────────────────────────────────
-base_url                          servers[0].url
-headers (global)                  info.x-blast-headers
-endpoint.name                     paths.{path}.{method}.operationId
-endpoint.method                   the key under paths.{path}
-endpoint.path                     the key under paths
-endpoint.body                     requestBody.content.application/json.example
-endpoint.expect_status            x-blast-expect-status  (or first response key)
-endpoint.extract                  x-blast-extract
-endpoint.tags                     tags  (standard OpenAPI field, reused)
-setup endpoints                   any operation with x-blast-setup: true
-```
-
-**Step 10 — `src/main.rs`**
-
-Two small updates:
-- The `--config` arg's help string currently says `blast.config.json`. Change it to say something like `path to openapi.json or blast.config.json (default: current directory)`.
-- The hardcoded `version = "0.1.0"` in `#[command(...)]` should be replaced with `version` (no value) so clap reads the version from `Cargo.toml` at compile time via the `CARGO_PKG_VERSION` env var. This isn't strictly related to OpenAPI but it means you won't forget to update it.
-
-**Step 11 — `README.md`**
-
-The Configuration section is the biggest documentation update. Every code block and table in that section references the old format. Changes needed:
-
-- Replace the full `blast.config.json` example block with an `openapi.json` example showing the same endpoints in OpenAPI format with `x-blast-*` extensions
-- Replace "Top-level fields" table with an OpenAPI-oriented table: `servers[0].url`, `info.x-blast-headers`, `paths`, `x-blast-setup`
-- Replace "Endpoint fields" table columns to map OpenAPI operation fields: `operationId`, `tags`, `requestBody`, `x-blast-expect-status`, `x-blast-extract`
-- Tags section: note that `tags` is now a standard OpenAPI field (not blast-specific), with the same `seed`/`run`/`stress` values
-- Setup phase section: replace `"setup": [...]` array description with `x-blast-setup: true` on individual operations
-- Request chaining section: replace `"extract": {...}` with `"x-blast-extract": {...}` on operations
-- Quick start step 1: `blast init` now creates `openapi.json`, update the comment
-- Fake data section: note that `{{fake.*}}` placeholders go in `requestBody.content.application/json.example`, same syntax, different location
-
----
-
-## 2. stat.rs
+## 1. stat.rs
 
 ### Why
 
@@ -373,21 +104,18 @@ Add `mod stat;` in `main.rs`. Both `run.rs` and `stress.rs` import `crate::stat:
 
 ---
 
-## 3. Mock server
+## 2. Mock server
 
 ### Why
 
-Frontend developers often know what their API should return — the shape of the data, the status codes, the field names — before any backend exists. Without a mock server they either stub responses in the frontend code (making the code harder to clean up) or block on the backend. `blast mock` reads the same config file the rest of blast uses, starts a local HTTP server, and responds to requests with plausible fake data generated from the schema or examples. No backend needed to start building.
+Frontend developers often know what their API should return — the shape of the data, the status codes, the field names — before any backend exists. Without a mock server they either stub responses in the frontend code (making the code harder to clean up) or block on the backend. `blast mock` reads the same `blast.config.json` the rest of blast uses, starts a local HTTP server, and responds to requests with the `mock_response` defined on each endpoint. No backend needed to start building.
 
 ### Result
 
 `blast mock [--port 3000] [--delay 0]` starts a local HTTP server. On startup it prints a table of every registered route and what it will return. For each request it logs the method, path, and status. Responses are generated from:
 
-1. The `example` field in the OpenAPI response (returned verbatim)
-2. The JSON Schema in the OpenAPI response (generated recursively from types)
-3. Fallback: `{"status": "ok"}` with the declared status code
-
-Works with blast.config.json too (returns minimal responses since there is no schema).
+1. The `mock_response` field on the endpoint (returned after resolving `{{fake.*}}` placeholders)
+2. Fallback: `{"status": "ok"}` with the declared `expect_status` code
 
 ### How
 
@@ -395,16 +123,34 @@ Works with blast.config.json too (returns minimal responses since there is no sc
 
 - A new crate dependency: `axum` (tokio-native HTTP framework)
 - `src/commands/mock.rs` — the command handler
-- `src/schema_gen.rs` — JSON Schema → fake Value generator (used if OpenAPI feature is done; otherwise not needed for basic mode)
 - New `Mock` variant in `Command` enum in `main.rs`
+- `mock_response: Option<serde_json::Value>` field added to `Endpoint` in `config.rs`
 
-**Important: mock.rs needs the raw spec, not the converted BlastConfig**
+**Step 1 — add `mock_response` to Endpoint**
 
-`openapi_to_blast_config` discards response schemas — it only keeps what blast needs to fire requests. The mock server needs the opposite: response bodies to serve back. So mock.rs must call `BlastConfig::load_raw()` (defined in the OpenAPI step) to get the raw `serde_json::Value`, navigate the paths manually to find response examples/schemas, AND call `BlastConfig::load()` to get the route list. Both calls read the same file; the duplication is acceptable.
+```
+Endpoint:
+  ...existing fields...
+  mock_response: Option<serde_json::Value>   // returned verbatim (after fake resolution)
+```
 
-If the file is not OpenAPI (no `"openapi"` key in the raw value), mock.rs falls back to minimal responses (`{"status": "ok"}`). Check for OpenAPI by reading `raw["openapi"].is_string()` before trying to navigate response schemas.
+Example in `blast.config.json`:
 
-**Step 1 — add the command to main.rs**
+```json
+{
+  "name": "list users",
+  "method": "GET",
+  "path": "/api/v1/users",
+  "expect_status": 200,
+  "mock_response": {
+    "users": [
+      { "id": "{{fake.uuid}}", "name": "{{fake.name}}", "email": "{{fake.email}}" }
+    ]
+  }
+}
+```
+
+**Step 2 — add the command to main.rs**
 
 ```
 Mock {
@@ -418,33 +164,29 @@ Mock {
 
 Wire it to `commands::mock::run(&cli.config, port, delay).await?` in the match.
 
-**Step 2 — build the route list from config**
+**Step 3 — build the route list from config**
 
 ```
 fn build_routes(config: &BlastConfig) -> Vec<MockRoute>:
   for endpoint in config.endpoints + config.setup (flattened):
     route = MockRoute {
       method:      endpoint.method,
-      path:        endpoint.path,           // "/api/v1/users/{id}" in OpenAPI form
+      path:        endpoint.path,
       axum_path:   convert_path(endpoint.path),  // "/api/v1/users/:id" for axum
       status:      endpoint.expect_status.unwrap_or(200),
       response_body: derive_response_body(endpoint),
     }
 
-fn convert_path(openapi_path: &str) -> String:
+fn convert_path(path: &str) -> String:
   replace all "{paramName}" with ":paramName"
 
-fn derive_response_body(endpoint: &Endpoint, raw_spec: Option<&serde_json::Value>) -> serde_json::Value:
-  // raw_spec is the full parsed openapi.json, passed in from mock.rs
-  // navigate: raw_spec["paths"][path][method.to_lowercase()]["responses"]
-  // find the first 2xx key, then try:
-  //   response["content"]["application/json"]["example"]  → return verbatim
-  //   response["content"]["application/json"]["schema"]   → pass to schema_gen::from_schema()
-  // if raw_spec is None (blast.config.json format) or no 2xx found:
-  //   fallback: json!({"status": "ok"})
+fn derive_response_body(endpoint: &Endpoint) -> serde_json::Value:
+  match &endpoint.mock_response:
+    Some(body) => template::resolve(body, &HashMap::new())  // resolve {{fake.*}}
+    None       => json!({"status": "ok"})
 ```
 
-**Step 3 — build the axum router**
+**Step 4 — build the axum router**
 
 ```
 async fn run(config_path, port, delay):
@@ -470,7 +212,7 @@ async fn run(config_path, port, delay):
   axum::serve(listener, router).await?
 ```
 
-**Step 4 — the handler factory**
+**Step 5 — the handler factory**
 
 Axum handlers need to be `async fn` values or closures that implement the `Handler` trait. The simplest approach is to capture state in an `Arc`:
 
@@ -494,49 +236,13 @@ async fn mock_handler(
 
 Each route gets its own `Arc<HandlerState>`, registered via `.with_state(arc)`.
 
-**Step 5 — schema_gen.rs (optional, enhances mock quality)**
-
-Only needed if using OpenAPI spec. Given a `serde_json::Value` that is a JSON Schema object, generate a fake `Value`:
-
-```
-pub fn from_schema(schema: &Value) -> Value:
-  match schema["type"].as_str():
-    "string" =>
-      match schema["format"].as_str():
-        "email"     => Value::String(fake_email())
-        "uuid"      => Value::String(fake_uuid())
-        "date-time" => Value::String("2026-01-01T00:00:00Z")
-        _           => Value::String(fake_word())
-
-    "integer" | "number" =>
-      Value::Number(random u32 in 1..1000)
-
-    "boolean" =>
-      Value::Bool(true)
-
-    "array" =>
-      items_schema = schema["items"]
-      Value::Array(vec![
-        from_schema(items_schema),
-        from_schema(items_schema),
-      ])
-
-    "object" =>
-      let mut map = serde_json::Map::new()
-      for (key, prop_schema) in schema["properties"].as_object():
-        map.insert(key, from_schema(prop_schema))
-      Value::Object(map)
-
-    _ => Value::Null
-```
-
 ---
 
-## 4. `{{env.VAR}}` template support
+## 3. `{{env.VAR}}` template support
 
 ### Why
 
-API keys, auth tokens, and org IDs should not live in the spec file committed to git. Right now the only way to inject a value into a request is to hardcode it or use a fake generator. Teams that want to run blast against a real environment need to pass secrets somehow.
+API keys, auth tokens, and org IDs should not live in the config file committed to git. Right now the only way to inject a value into a request is to hardcode it or use a fake generator. Teams that want to run blast against a real environment need to pass secrets somehow.
 
 ### Result
 
@@ -576,7 +282,7 @@ No changes needed in any command file — `resolve_key` is called by `resolve_st
 
 ---
 
-## 5. Threshold assertions for `run` and `stress`
+## 4. Threshold assertions for `run` and `stress`
 
 ### Why
 
@@ -665,7 +371,7 @@ For `stress`, evaluate against the stats of the final completed step (or the bre
 
 ---
 
-## 6. Body assertions in `check`
+## 5. Body assertions in `check`
 
 ### Why
 
@@ -673,12 +379,17 @@ For `stress`, evaluate against the stats of the final completed step (or the bre
 
 ### Result
 
-`x-blast-assert` on an operation in the OpenAPI spec (or an `assert` field in `blast.config.json`) defines a map of dot-path → expected value. After `check` receives a passing status, it evaluates each assertion against the response body. Failures are shown inline alongside the endpoint row.
+An `assert` field on an endpoint in `blast.config.json` defines a map of dot-path → expected value. After `check` receives a passing status, it evaluates each assertion against the response body. Failures are shown inline alongside the endpoint row.
 
 ```json
-"x-blast-assert": {
-  "data.status": "active",
-  "data.count":  ">0"
+{
+  "name": "list users",
+  "method": "GET",
+  "path": "/api/v1/users",
+  "assert": {
+    "data.status": "active",
+    "data.count":  ">0"
+  }
 }
 ```
 
@@ -687,7 +398,6 @@ For `stress`, evaluate against the stats of the final completed step (or the bre
 **What needs to change**
 
 - `src/config.rs` — add `assert: Option<HashMap<String, String>>` to `Endpoint`
-- `src/openapi.rs` — map `x-blast-assert` on `Operation` to `Endpoint.assert` in the converter
 - `src/commands/check.rs` — evaluate assertions after a passing request
 
 **Step 1 — add the field to `Endpoint`**
@@ -734,7 +444,7 @@ Count assertion failures alongside status failures in the final `N/N passed` sum
 
 ---
 
-## 7. Structured output
+## 6. Structured output
 
 ### Why
 
@@ -797,7 +507,7 @@ Progress lines in `print_progress()` should go to `eprintln!` (stderr) so they d
 
 ---
 
-## 8. `x-blast-weight` for traffic shaping
+## 7. `weight` for traffic shaping
 
 ### Why
 
@@ -805,14 +515,22 @@ Progress lines in `print_progress()` should go to `eprintln!` (stderr) so they d
 
 ### Result
 
-`x-blast-weight: 3` on an OpenAPI operation (or `"weight": 3` in `blast.config.json`) means that endpoint takes 3 slots in the rotation. An unweighted endpoint defaults to weight 1. The total traffic distribution matches the weight ratios.
+`"weight": 3` on an endpoint in `blast.config.json` means that endpoint takes 3 slots in the rotation. An unweighted endpoint defaults to weight 1. The total traffic distribution matches the weight ratios.
+
+```json
+{
+  "name": "list users",
+  "method": "GET",
+  "path": "/api/v1/users",
+  "weight": 3
+}
+```
 
 ### How
 
 **What needs to change**
 
 - `src/config.rs` — add `weight: Option<u32>` to `Endpoint`
-- `src/openapi.rs` — map `x-blast-weight` in the converter
 - `src/commands/run.rs` and `src/commands/stress.rs` — expand endpoint list by weight before the loop
 
 **Step 1 — add field to Endpoint**
@@ -841,11 +559,11 @@ The round-robin index modulo then distributes across the expanded list. No chang
 
 ---
 
-## 9. Variable file (`--vars`)
+## 8. Variable file (`--vars`)
 
 ### Why
 
-Some placeholders in a spec aren't fake data and aren't extracted from a prior response — they're test fixture values like a known user ID, an organisation slug, or a seeded resource ID. Right now there's no way to inject these without hardcoding them in the spec or using a setup endpoint that creates them first.
+Some placeholders in a config aren't fake data and aren't extracted from a prior response — they're test fixture values like a known user ID, an organisation slug, or a seeded resource ID. Right now there's no way to inject these without hardcoding them in the config or using a setup endpoint that creates them first.
 
 ### Result
 
@@ -897,7 +615,7 @@ if let Some(vars_path) = &cli.vars:
 
 ---
 
-## 10. `blast trace`
+## 9. `blast trace`
 
 ### Why
 
@@ -974,7 +692,7 @@ Color the status line green if passed, red if not. No changes to any existing co
 
 ---
 
-## 11. Ramp-up on `run`
+## 10. Ramp-up on `run`
 
 ### Why
 
@@ -1022,7 +740,7 @@ Print a header line before the main loop: `"ramp-up complete — measuring at {}
 
 ---
 
-## 12. Scenario mode
+## 11. Scenario mode
 
 ### Why
 
@@ -1030,15 +748,22 @@ Print a header line before the main loop: `"ramp-up complete — measuring at {}
 
 ### Result
 
-`x-blast-scenario: "journey-name"` on OpenAPI operations groups them into an ordered sequence. When `blast run` or `blast stress` detects scenarios, each concurrency slot runs the full sequence as one unit: it fires every endpoint in order, extracting values along the way, then starts again from the top. Unscenarioed endpoints still round-robin as before.
+`"scenario": "journey-name"` on an endpoint in `blast.config.json` groups endpoints into an ordered sequence. When `blast run` or `blast stress` detects scenarios, each concurrency slot runs the full sequence as one unit: it fires every endpoint in order, extracting values along the way, then starts again from the top. Unscenarioed endpoints still round-robin as before.
+
+```json
+[
+  { "name": "register", "method": "POST", "path": "/api/v1/auth/register", "scenario": "auth-flow", ... },
+  { "name": "login",    "method": "POST", "path": "/api/v1/auth/login",    "scenario": "auth-flow", ... },
+  { "name": "profile",  "method": "GET",  "path": "/api/v1/me",            "scenario": "auth-flow", ... }
+]
+```
 
 ### How
 
 **What needs to change**
 
 - `src/config.rs` — add `scenario: Option<String>` to `Endpoint`
-- `src/openapi.rs` — map `x-blast-scenario` in the converter
-- `src/config.rs` — add `scenarios(&self) -> HashMap<String, Vec<&Endpoint>>` method that groups by scenario name, preserving spec order
+- `src/config.rs` — add `scenarios(&self) -> HashMap<String, Vec<&Endpoint>>` method that groups by scenario name, preserving config order
 - `src/commands/run.rs` — detect scenarios and switch to scenario execution mode
 
 **Step 1 — group endpoints into scenarios**
@@ -1051,7 +776,7 @@ impl BlastConfig {
       if let Some(scenario) = &endpoint.scenario:
         map.entry(scenario).or_default().push(endpoint)
     map
-    // order within each Vec reflects order in self.endpoints (spec order)
+    // order within each Vec reflects order in self.endpoints (config order)
 }
 ```
 
@@ -1085,7 +810,7 @@ else:
 
 ---
 
-## 13. `blast history`
+## 12. `blast history`
 
 ### Why
 
@@ -1151,7 +876,7 @@ New dep needed: `dirs` crate for `home_dir()`.
 
 ---
 
-## 14. Cookie jar
+## 13. Cookie jar
 
 ### Why
 
@@ -1188,7 +913,7 @@ The only edge case: `seed` creates many concurrent tasks each using the same `Ar
 
 ---
 
-## 15. Multi-stage load profile
+## 14. Multi-stage load profile
 
 ### Why
 
@@ -1196,15 +921,19 @@ The only edge case: `seed` creates many concurrent tasks each using the same `Ar
 
 ### Result
 
-`x-blast-stages` in the OpenAPI spec (or `"stages"` top-level field in `blast.config.json`) defines an ordered list of load steps. Each step has a target RPS and a duration. blast ramps linearly between consecutive steps and prints per-step stats. A new `blast stage` command (or reuse `blast stress`) executes it.
+A `"stages"` top-level field in `blast.config.json` defines an ordered list of load steps. Each step has a target RPS and a duration. blast ramps linearly between consecutive steps and prints per-step stats. A new `blast stage` command executes it.
 
 ```json
-"x-blast-stages": [
-  { "rps": 10,  "duration": 30  },
-  { "rps": 100, "duration": 120 },
-  { "rps": 50,  "duration": 60  },
-  { "rps": 0,   "duration": 30  }
-]
+{
+  "base_url": "http://localhost:3000",
+  "stages": [
+    { "rps": 10,  "duration": 30  },
+    { "rps": 100, "duration": 120 },
+    { "rps": 50,  "duration": 60  },
+    { "rps": 0,   "duration": 30  }
+  ],
+  "endpoints": [...]
+}
 ```
 
 ### How
@@ -1212,7 +941,6 @@ The only edge case: `seed` creates many concurrent tasks each using the same `Ar
 **What needs to change**
 
 - `src/config.rs` — add `stages: Option<Vec<Stage>>` to `BlastConfig`; `Stage { rps: u64, duration: u64 }`
-- `src/openapi.rs` — map `x-blast-stages` from `info` level in the converter
 - `src/main.rs` — add `Stage` subcommand (no args, stages come from config)
 - `src/commands/stage.rs` — new file
 
@@ -1267,51 +995,41 @@ The ramp between stages works by computing the interval_ms at the start of each 
 
 1. **stat.rs** first — self-contained, no new dependencies, immediately cleans up duplication. Good warmup.
 
-2. **OpenAPI spec** second. Within this feature, work in this order:
-   - `config.rs`: structs → converter → `load()` → `load_raw()` → `openapi_template()` → `create()`
-   - `blast.config.json` → rename to `openapi.json`, rewrite as OpenAPI
-   - `commands/init.rs`: update the printed message
-   - `commands/validate.rs`: optionally show detected format in header
-   - `main.rs`: update `--config` description, switch to compile-time version
-   - `README.md`: rewrite Configuration section
+2. **Cookie jar** — one-line change to each Client builder, trivial and unblocks teams who need it.
 
-   `check.rs`, `seed.rs`, `run.rs`, `stress.rs` need no changes.
+3. **`{{env.VAR}}`** — one function in template.rs, no deps.
 
-3. **Cookie jar** — one-line change to each Client builder, do immediately after OpenAPI since it's trivial and unblocks teams who need it.
+4. **Variable file (`--vars`)** — pairs naturally with env vars, do together.
 
-4. **`{{env.VAR}}`** — one function in template.rs, no deps.
+5. **Mock server** — needs axum (new dep). Add `mock_response` field to `Endpoint`, build the server.
 
-5. **Variable file (`--vars`)** — pairs naturally with env vars, do together.
+6. **`blast trace`** — new command, extends runner. Do after the codebase has stabilised.
 
-6. **Mock server** — needs axum (new dep), benefits from `load_raw()` added in step 2.
+7. **`weight`** — one new field, one helper.
 
-7. **`blast trace`** — new command, extends runner. Do after the codebase has stabilised from OpenAPI changes.
+8. **Body assertions** — builds on the extractor.
 
-8. **`x-blast-weight`** — one new field, one helper. Do after OpenAPI since the field lives in the spec.
+9. **Ramp-up on `run`** — self-contained change to run.rs once stat.rs is done.
 
-9. **Body assertions** — builds on the extractor. Do after OpenAPI since `x-blast-assert` lives on operations.
+10. **Scenario mode** — builds on config and runner.
 
-10. **Ramp-up on `run`** — self-contained change to run.rs once stat.rs is done.
+11. **Threshold assertions** — builds on stat.rs.
 
-11. **Scenario mode** — builds on config and runner. Do after OpenAPI and cookie jar are stable.
+12. **Structured output** — do alongside threshold assertions, both relate to post-run consumption.
 
-12. **Threshold assertions** — builds on stat.rs. Do after stat.rs is solid.
+13. **Multi-stage load profile** — most complex new command. Do after scenario mode and ramp-up are working.
 
-13. **Structured output** — do alongside threshold assertions, both relate to post-run consumption.
+14. **`blast history`** — do last. Depends on structured output (needs the JSON shape to be stable) and adds the `dirs` crate dependency.
 
-14. **Multi-stage load profile** — most complex new command. Do after scenario mode and ramp-up are working, since stage.rs borrows patterns from both.
+15. **Fake data engine** — already shipped. Listed here for completeness; no implementation work remaining.
 
-15. **`blast history`** — do last. Depends on structured output (needs the JSON shape to be stable) and adds the `dirs` crate dependency.
+16. **Request chaining** — already shipped. Listed here for completeness; no implementation work remaining.
 
-16. **Fake data engine** — already shipped. Listed here for completeness; no implementation work remaining.
-
-17. **Request chaining** — already shipped. Listed here for completeness; no implementation work remaining.
-
-18. **HTML report** — do after structured output and stat.rs are stable. Depends on the JSON shape produced by `to_json()` since the template reads from it.
+17. **HTML report** — do after structured output and stat.rs are stable. Depends on the JSON shape produced by `to_json()` since the template reads from it.
 
 ---
 
-## 16. Fake data engine
+## 15. Fake data engine
 
 ### Why
 
@@ -1409,22 +1127,24 @@ fn resolve_key(key: &str, ctx: &Context) -> String
 
 ---
 
-## 17. Request chaining
+## 16. Request chaining
 
 ### Why
 
-Real API flows are stateful. You cannot load-test a "fetch order" endpoint in isolation — you first need an order ID, which comes from a "create order" response. Without chaining, teams work around this by hardcoding known IDs (brittle, environment-specific) or running a manual setup step before blast (error-prone). Chaining lets the spec itself describe the dependency: extract the ID from response A and inject it into request B.
+Real API flows are stateful. You cannot load-test a "fetch order" endpoint in isolation — you first need an order ID, which comes from a "create order" response. Without chaining, teams work around this by hardcoding known IDs (brittle, environment-specific) or running a manual setup step before blast (error-prone). Chaining lets the config itself describe the dependency: extract the ID from response A and inject it into request B.
 
 ### Result
 
-`x-blast-extract` on an OpenAPI operation maps dot-path expressions to context variable names. After a request completes successfully, blast walks the response body along each dot-path and stores the value in the shared context. Any subsequent request in the same run can reference that variable as `{{variable_name}}`.
+`"extract"` on an endpoint maps dot-path expressions to context variable names. After a request completes successfully, blast walks the response body along each dot-path and stores the value in the shared context. Any subsequent request in the same run can reference that variable as `{{variable_name}}`.
 
-Example spec:
+Example config:
 
 ```json
-"post": {
-  "operationId": "login",
-  "x-blast-extract": {
+{
+  "name": "login",
+  "method": "POST",
+  "path": "/api/v1/auth/login",
+  "extract": {
     "auth_token": "data.token",
     "user_id":    "data.user.id"
   }
@@ -1479,7 +1199,7 @@ The context is shared across all requests within a single run. In `run` and `str
 
 ---
 
-## 18. HTML report (`--output html`)
+## 17. HTML report (`--output html`)
 
 ### Why
 
