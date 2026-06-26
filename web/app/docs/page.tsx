@@ -6,14 +6,14 @@ import { ActiveSidebar } from "@/components/docs/sidebar";
 export const metadata: Metadata = {
   title: "Docs",
   description:
-    "blast documentation. Learn how to use blast run, blast stress, blast mock, and configure your OpenAPI spec with x-blast-* extensions.",
+    "blast documentation. Learn how to use blast run, blast stress, blast mock, and configure your API tests with blast.config.json.",
   alternates: {
     canonical: "https://blast.walonfoundation.com/docs",
   },
   openGraph: {
     title: "blast Docs",
     description:
-      "Full reference for blast commands, config, and x-blast-* OpenAPI extensions.",
+      "Full reference for blast commands and blast.config.json configuration.",
     url: "https://blast.walonfoundation.com/docs",
   },
 };
@@ -171,7 +171,7 @@ export default function DocsPage() {
               { label: "stress",      href: "#cmd-stress" },
               { label: "mock",        href: "#cmd-mock" },
               { label: "Config",      href: "#configuration" },
-              { label: "Extensions",  href: "#extensions" },
+              { label: "Fields",      href: "#extensions" },
               { label: "Fake data",   href: "#fake-data" },
               { label: "Tags",        href: "#tags" },
               { label: "Setup",       href: "#setup" },
@@ -191,18 +191,14 @@ export default function DocsPage() {
         {/* Overview */}
         <Section id="overview" title="blast docs" first>
           <P>
-            <strong className="text-hi">blast</strong> is a config-driven API load tester and traffic
-            generator written in Rust. Describe your API in an OpenAPI 3.x spec, then hit every endpoint
+            <strong className="text-hi">blast</strong> is a config-driven API load tester and mock server
+            written in Rust. Define your endpoints in <C>blast.config.json</C>, then hit every one
             with a single command — no code, no scripting.
           </P>
           <P>
             It supports fake data generation via <C>{"{{fake.*}}"}</C> placeholders, request chaining
             using JSON extraction and dot-path rules, fixed-RPS load tests, and stress ramp tests that
             auto-detect where your API breaks.
-          </P>
-          <P>
-            The original <C>blast.config.json</C> format is still supported and read transparently
-            alongside the OpenAPI format.
           </P>
         </Section>
 
@@ -253,8 +249,8 @@ blast stress --min-rps 10 --max-rps 200 --step 20 --step-duration 30`}</Pre>
 
           <SubSection id="cmd-init" title="blast init [path]" mono>
             <P>
-              Creates <C>openapi.json</C> in the given directory (default: current directory). The generated
-              file is a minimal but valid OpenAPI 3.x spec with one example endpoint. Edit it to describe
+              Creates <C>blast.config.json</C> in the given directory (default: current directory). The
+              generated file includes example endpoints with fake data placeholders. Edit it to describe
               your API, then run <C>blast check</C>.
             </P>
             <Pre lang="bash">{`blast init
@@ -271,10 +267,9 @@ blast init ./my-api`}</Pre>
 
           <SubSection id="cmd-check" title="blast check" mono>
             <P>
-              Hits every endpoint once in spec order. Merges global <C>x-blast-headers</C> with
-              per-operation headers. Extracts values from successful responses so later endpoints can
-              use them. Prints a coloured pass/fail table with per-request timing. Exits non-zero on
-              any failure.
+              Hits every endpoint once in order. Merges global headers with per-endpoint headers.
+              Extracts values from successful responses so later endpoints can use them. Prints a
+              coloured pass/fail table with per-request timing. Exits non-zero on any failure.
             </P>
           </SubSection>
 
@@ -331,29 +326,30 @@ blast init ./my-api`}</Pre>
 
           <SubSection id="cmd-mock" title="blast mock" mono>
             <P>
-              Starts a local HTTP server from your OpenAPI spec. Every path in the spec becomes a live
-              endpoint that returns schema-shaped fake data. Frontend developers can point their app at{" "}
+              Starts a local HTTP server from your <C>blast.config.json</C>. Every endpoint becomes a
+              live route. Frontend developers can point their app at{" "}
               <C>http://localhost:&lt;port&gt;</C> and build against realistic responses without waiting
               for the real backend.
             </P>
             <P>
-              Response bodies are generated from the <C>example</C> field on each operation&apos;s
-              request body, falling back to schema-derived fake data. The <C>{"{{fake.*}}"}</C>{" "}
-              placeholders are resolved, so responses look like real data.
+              Response bodies are read from the <C>mock_response</C> field on each endpoint.{" "}
+              <C>{"{{fake.*}}"}</C> placeholders are resolved on every request, so each response gets
+              fresh data. If no <C>mock_response</C> is defined, the route returns{" "}
+              <C>{"{"}"status": "ok"{"}"}</C> with the declared status code.
             </P>
             <Table
               cols={["Flag", "Default", "Description"]}
               rows={[
                 ["--port", "4000", "Port to listen on"],
-                ["--config", "openapi.json", "Path to OpenAPI spec (auto-detected if omitted)"],
+                ["--config", "blast.config.json", "Path to config (auto-detected if omitted)"],
               ]}
             />
             <Pre lang="bash">{`blast mock
 blast mock --port 8080
-blast mock --config ./specs/api.json`}</Pre>
+blast mock --config ./api/blast.config.json`}</Pre>
             <Pre lang="bash">{`$ blast mock --port 4000
 
-  Loaded openapi.json
+  Loaded blast.config.json
 
   GET    /api/v1/users               200
   POST   /api/v1/auth/register       201
@@ -370,104 +366,76 @@ blast mock --config ./specs/api.json`}</Pre>
         {/* Configuration */}
         <Section id="configuration" title="Configuration">
           <P>
-            blast reads a standard <strong className="text-hi">OpenAPI 3.x</strong> spec.
-            All blast-specific behaviour is expressed via <C>x-blast-*</C> extension fields on
-            the info object or individual operations. No blast-specific top-level keys are added
-            — the spec remains valid OpenAPI.
-          </P>
-          <P>
-            The original <C>blast.config.json</C> format (with a flat <C>endpoints</C> array) is
-            still detected and loaded transparently. Both formats convert to the same internal
-            representation.
+            blast reads <C>blast.config.json</C> from the current directory (or the path passed
+            to <C>--config</C>). The file has a flat structure — a base URL, global headers, an
+            optional setup array, and an endpoints array.
           </P>
 
           <Pre lang="json">{`{
-  "openapi": "3.0.0",
-  "info": {
-    "title": "My API",
-    "version": "1.0.0",
-    "x-blast-headers": {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer {{token}}"
-    }
+  "base_url": "http://localhost:3000",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer {{token}}"
   },
-  "servers": [{ "url": "http://localhost:3000" }],
-  "paths": {
-    "/api/v1/auth/login": {
-      "post": {
-        "operationId": "login",
-        "x-blast-setup": true,
-        "x-blast-expect-status": 200,
-        "x-blast-extract": { "token": "data.access_token" },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "example": {
-                "email": "admin@example.com",
-                "password": "Admin1234!"
-              }
-            }
-          }
-        },
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/v1/auth/register": {
-      "post": {
-        "operationId": "register user",
-        "tags": ["seed"],
-        "x-blast-expect-status": 201,
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "example": {
-                "email": "{{fake.email}}",
-                "password": "{{fake.password}}",
-                "name": "{{fake.name}}"
-              }
-            }
-          }
-        },
-        "responses": { "201": { "description": "Created" } }
-      }
-    },
-    "/api/v1/users": {
-      "get": {
-        "operationId": "list users",
-        "tags": ["run"],
-        "x-blast-expect-status": 200,
-        "x-blast-weight": 3,
-        "responses": { "200": { "description": "OK" } }
-      }
-    },
-    "/api/v1/users/{id}": {
-      "get": {
-        "operationId": "get user",
-        "tags": ["run"],
-        "x-blast-expect-status": 200,
-        "responses": { "200": { "description": "OK" } }
-      }
+  "setup": [
+    {
+      "name": "login",
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "body": { "email": "admin@example.com", "password": "Admin1234!" },
+      "expect_status": 200,
+      "extract": { "token": "data.access_token" }
     }
-  }
+  ],
+  "endpoints": [
+    {
+      "name": "register user",
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "body": {
+        "email": "{{fake.email}}",
+        "password": "{{fake.password}}",
+        "name": "{{fake.name}}"
+      },
+      "expect_status": 201,
+      "tags": ["seed"]
+    },
+    {
+      "name": "list users",
+      "method": "GET",
+      "path": "/api/v1/users",
+      "expect_status": 200,
+      "weight": 3,
+      "tags": ["run"]
+    },
+    {
+      "name": "get user",
+      "method": "GET",
+      "path": "/api/v1/users/{{user_id}}",
+      "expect_status": 200,
+      "tags": ["run"]
+    }
+  ]
 }`}</Pre>
         </Section>
 
-        {/* Extensions */}
-        <Section id="extensions" title="x-blast extensions">
+        {/* Endpoint fields */}
+        <Section id="extensions" title="Endpoint fields">
           <Table
-            cols={["Field", "Location", "Type", "Description"]}
+            cols={["Field", "Type", "Description"]}
             rows={[
-              ["x-blast-headers", "info or operation", "object", "Headers merged into every request (info) or this operation only"],
-              ["x-blast-setup", "operation", "boolean", "Marks operation as a setup step — runs once before any load"],
-              ["x-blast-expect-status", "operation", "integer", "Expected HTTP status code; failure counted if response differs"],
-              ["x-blast-extract", "operation", "object", "Map of variable name → dot-path to extract from response JSON"],
-              ["x-blast-weight", "operation", "integer", "Relative traffic weight for load distribution (default: 1)"],
+              ["name", "string", "Human-readable label shown in output"],
+              ["method", "string", "HTTP method — GET, POST, PUT, PATCH, DELETE"],
+              ["path", "string", "URL path, appended to base_url. Supports {{placeholders}}."],
+              ["headers", "object", "Per-endpoint headers, merged with global headers"],
+              ["body", "object", "Request body (JSON). Supports {{fake.*}} placeholders."],
+              ["expect_status", "integer", "Expected HTTP status code; counted as failure if response differs"],
+              ["extract", "object", "Map of variable name → dot-path to extract from response JSON"],
+              ["weight", "integer", "Relative traffic weight for load distribution (default: 1)"],
+              ["tags", "array", 'Commands that pick up this endpoint: "seed", "run", "stress"'],
+              ["mock_response", "object", "Body returned by blast mock for this route"],
             ]}
           />
-          <P>
-            Fields are ignored by standard OpenAPI tooling, keeping the spec valid for use with
-            Swagger UI, code generators, and other OpenAPI consumers.
-          </P>
         </Section>
 
         {/* Fake data */}
@@ -507,9 +475,8 @@ blast mock --config ./specs/api.json`}</Pre>
         {/* Tags */}
         <Section id="tags" title="Tags">
           <P>
-            Standard OpenAPI <C>tags</C> arrays on operations control which blast command
-            picks up that endpoint. An endpoint can appear in multiple commands by listing
-            multiple tags.
+            The <C>tags</C> array on an endpoint controls which blast command picks it up.
+            An endpoint can appear in multiple commands by listing multiple tags.
           </P>
 
           <Table
@@ -523,17 +490,17 @@ blast mock --config ./specs/api.json`}</Pre>
 
           <P>
             If no endpoints have any tags, all commands fall back to using every endpoint.
-            Setup endpoints (marked <C>x-blast-setup: true</C>) are excluded from tag matching
-            — they always run once before load regardless of tags.
+            Endpoints in the <C>setup</C> array are always excluded from tag matching — they
+            run once before load regardless of tags.
           </P>
         </Section>
 
         {/* Setup */}
         <Section id="setup" title="Setup phase">
           <P>
-            Marking an operation with <C>x-blast-setup: true</C> designates it as a setup step.
-            Setup steps run once in spec order before any load traffic. Extracted values from
-            setup steps are shared with every subsequent request for the entire test.
+            The top-level <C>setup</C> array in <C>blast.config.json</C> lists endpoints that
+            run once in order before any load traffic. Extracted values from setup steps are
+            shared with every subsequent request for the entire test.
           </P>
           <P>
             If a setup step fails (wrong status code, network error), blast aborts immediately
@@ -541,17 +508,17 @@ blast mock --config ./specs/api.json`}</Pre>
             requests with a missing auth token.
           </P>
           <P>
-            The canonical use case is authentication: login in setup, extract the access token
-            via <C>x-blast-extract</C>, then include it in every load endpoint via a global
-            header using <C>{"{{token}}"}</C>.
+            The canonical use case is authentication: add a login endpoint to <C>setup</C>,
+            extract the access token with <C>extract</C>, then include it in every load endpoint
+            via the global <C>headers</C> using <C>{"{{token}}"}</C>.
           </P>
         </Section>
 
         {/* Chaining */}
         <Section id="chaining" title="Request chaining">
           <P>
-            <C>x-blast-extract</C> on any operation stores response values in a shared context
-            map keyed by variable name. Later operations reference them with <C>{"{{name}}"}</C>{" "}
+            The <C>extract</C> field on any endpoint stores response values in a shared context
+            map keyed by variable name. Later endpoints reference them with <C>{"{{name}}"}</C>{" "}
             in any string field — headers, body values, or URL path parameters.
           </P>
           <P>
@@ -559,22 +526,28 @@ blast mock --config ./specs/api.json`}</Pre>
             array indices (<C>items.0.id</C>). Only scalar values (strings, numbers, booleans)
             are stored — objects and arrays emit a warning and are skipped.
           </P>
-          <Pre lang="jsonc">{`// Operation A: extract the token
-"x-blast-extract": {
-  "token":   "data.access_token",
-  "user_id": "data.user.id"
-}
-
-// Operation B: use extracted values
-"x-blast-headers": {
-  "Authorization": "Bearer {{token}}"
-},
-"example": {
-  "owner_id": "{{user_id}}"
+          <Pre lang="json">{`{
+  "name": "login",
+  "method": "POST",
+  "path": "/api/v1/auth/login",
+  "body": { "email": "admin@example.com", "password": "Admin1234!" },
+  "expect_status": 200,
+  "extract": {
+    "token":   "data.access_token",
+    "user_id": "data.user.id"
+  }
+}`}</Pre>
+          <Pre lang="json">{`{
+  "name": "get user",
+  "method": "GET",
+  "path": "/api/v1/users/{{user_id}}",
+  "headers": { "Authorization": "Bearer {{token}}" },
+  "expect_status": 200,
+  "tags": ["run"]
 }`}</Pre>
           <P>
-            Values extracted during setup are available to all subsequent operations.
-            Values extracted during load operations are available to later operations in the
+            Values extracted during setup are available to all subsequent endpoints.
+            Values extracted during load operations are available to later endpoints in the
             same request round.
           </P>
         </Section>

@@ -81,18 +81,18 @@ const STATS = [
 /* ── Roadmap ───────────────────────────────────────── */
 
 const ROADMAP = [
-  { status: "done",        label: "OpenAPI as config",      desc: "Read standard OpenAPI 3.x files directly. x-blast-* extensions carry load-test metadata." },
+  { status: "done",        label: "JSON config",            desc: "blast.config.json — define endpoints, bodies, headers, and fake data in one file. No scripting." },
   { status: "done",        label: "Fake data engine",       desc: "20+ generators: emails, UUIDs, passwords, names, addresses, lorem, companies." },
   { status: "done",        label: "Request chaining",       desc: "Extract from responses, inject into next request. Full user journeys without code." },
-  { status: "in-progress", label: "Mock server",            desc: "blast mock starts a local HTTP server from your spec. Every route returns schema-shaped fake responses. Zero config." },
+  { status: "in-progress", label: "Mock server",            desc: "blast mock starts a local HTTP server from your config. Every route returns fake responses. Zero config." },
   { status: "planned",     label: "Scenario mode",          desc: "Ordered sequences of requests. Each virtual user runs login → create → fetch." },
   { status: "planned",     label: "blast history",          desc: "Auto-saves every run. Flags p99 regressions against the previous baseline." },
-  { status: "planned",     label: "Multi-stage load",       desc: "x-blast-stages: ramp-up, hold, cooldown in config. Reproducible and version-controlled." },
+  { status: "planned",     label: "Multi-stage load",       desc: "stages: ramp-up, hold, cooldown in config. Reproducible and version-controlled." },
   { status: "planned",     label: "Threshold assertions",   desc: "--assert p99<200ms exits non-zero. Drop into CI as a performance gate." },
 ];
 
 const COMPARE_ROWS = [
-  { feature: "OpenAPI spec as config",  blast: true,  k6: false, wrk: false, ab: false },
+  { feature: "JSON config, no scripting", blast: true,  k6: false, wrk: false, ab: false },
   { feature: "Mock server built-in",    blast: true,  k6: false, wrk: false, ab: false },
   { feature: "Request chaining",        blast: true,  k6: true,  wrk: false, ab: false },
   { feature: "Fake data generation",    blast: true,  k6: true,  wrk: false, ab: false },
@@ -208,7 +208,7 @@ export default function Home() {
               transition={{ duration: 0.55, delay: 0.16 }}
               className="text-base text-[#71717a] leading-[1.75] mb-10 max-w-[420px]"
             >
-              One OpenAPI spec. Run load tests to find where your API breaks — or spin up a mock server so frontend devs can build right now.
+              One config file. Run load tests to find where your API breaks — or spin up a mock server so frontend devs can build right now.
             </motion.p>
 
             {/* Install one-liner — OS detected */}
@@ -349,7 +349,7 @@ export default function Home() {
               What blast does
             </p>
             <h2 className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-[-0.035em] text-hi leading-[1.15]">
-              One spec. Two tools.
+              One config. Two tools.
             </h2>
           </motion.div>
 
@@ -373,7 +373,7 @@ export default function Home() {
               </p>
               <ul className="list-none p-0 m-0 mb-6">
                 {[
-                  "OpenAPI spec as config — no extra files",
+                  "JSON config — define endpoints, no scripting",
                   "Fake data generation for realistic traffic",
                   "Request chaining via JSON extraction",
                   "p50/p95/p99/p999 percentile reports",
@@ -399,13 +399,13 @@ export default function Home() {
                 Build UI without the backend
               </h3>
               <p className="text-[0.9rem] text-[#71717a] leading-[1.7] mb-6">
-                blast mock reads your OpenAPI spec and starts a local HTTP server in seconds. Every endpoint returns realistic fake data so you can build and iterate without waiting for the backend to be ready.
+                blast mock reads your config and starts a local HTTP server in seconds. Every endpoint returns realistic fake data so you can build and iterate without waiting for the backend to be ready.
               </p>
               <ul className="list-none p-0 m-0 mb-6">
                 {[
                   "One command, all your routes mounted",
-                  "Responses shaped by your OpenAPI schemas",
-                  "Same spec the backend tests against",
+                  "Responses with {{fake.*}} data per request",
+                  "Same config the load tests run against",
                   "No stubs, no mocking libraries, no configuration",
                 ].map((item) => (
                   <li key={item} className="text-sm text-mid pl-5 relative mb-[0.4rem]">
@@ -435,10 +435,10 @@ export default function Home() {
               blast mock
             </p>
             <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.03em] text-hi leading-[1.15] mb-3">
-              A real server from a spec file.
+              A real server from your config.
             </h2>
             <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] max-w-[480px]">
-              Run blast mock and every path in your OpenAPI spec becomes a live endpoint returning schema-shaped fake data. Point your frontend at localhost and ship.
+              Run blast mock and every path in your config becomes a live endpoint returning fake data. Point your frontend at localhost and ship.
             </p>
           </motion.div>
 
@@ -460,7 +460,7 @@ export default function Home() {
                 {[
                   { t: "cmd",    text: "$ blast mock --port 4000" },
                   { t: "blank",  text: "" },
-                  { t: "dim",    text: "  Loaded openapi.json" },
+                  { t: "dim",    text: "  Loaded blast.config.json" },
                   { t: "blank",  text: "" },
                   { t: "ok",     text: "  GET    /api/v1/users               200" },
                   { t: "ok",     text: "  POST   /api/v1/auth/register       201" },
@@ -502,7 +502,7 @@ export default function Home() {
               Built for API contracts, not scripts.
             </h2>
             <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] max-w-[540px]">
-              Most load tools require you to write code. blast reads the spec your team already has.
+              Most load tools require you to write code. blast reads the config your team already wrote.
             </p>
           </motion.div>
 
@@ -642,10 +642,10 @@ export default function Home() {
           className="max-w-[560px] mx-auto text-center"
         >
           <h2 className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-[-0.03em] text-hi mb-[0.875rem] leading-[1.15]">
-            One spec. Two tools. Ship faster.
+            One config. Two tools. Ship faster.
           </h2>
           <p className="text-[0.9375rem] text-[#71717a] leading-[1.7] mb-8">
-            Load test your API and mock it for frontend development — both from the same OpenAPI file.
+            Load test your API and mock it for frontend development — both from the same config file.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link
