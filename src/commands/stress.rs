@@ -1,11 +1,21 @@
-use std::{path::Path, sync::Arc, time::{Duration, Instant}};
-use anyhow::Result;
-use reqwest::Client;
-use tokio::{sync::Mutex, task::JoinHandle};
 use crate::{config::BlastConfig, runner, stat::Stats};
+use anyhow::Result;
 use colored::Colorize;
+use reqwest::Client;
+use std::{
+    path::Path,
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::{sync::Mutex, task::JoinHandle};
 
-pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_duration:u64) -> Result<()>{
+pub async fn run(
+    config_path: &Path,
+    min_rps: u64,
+    max_rps: u64,
+    step: u64,
+    step_duration: u64,
+) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = config.endpoint_for("stress");
     if endpoints.is_empty() {
@@ -13,13 +23,9 @@ pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_dur
         return Ok(());
     }
 
-    let client = Arc::new(
-        Client::builder().timeout(Duration::from_secs(30)).build()?
-    );
+    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).build()?);
 
-    let endpoints = Arc::new(
-        endpoints.into_iter().cloned().collect::<Vec<_>>()
-    );
+    let endpoints = Arc::new(endpoints.into_iter().cloned().collect::<Vec<_>>());
 
     let ctx = config.load_setup(&client).await?;
     let base_url = Arc::new(config.base_url.clone());
@@ -77,10 +83,15 @@ pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_dur
         if breaking {
             println!(
                 "\n{}",
-                format!("⚠ breaking point at {} req/s", current_rps).red().bold()
+                format!("⚠ breaking point at {} req/s", current_rps)
+                    .red()
+                    .bold()
             );
             println!("  p99:        {}ms", step_results.last().unwrap().p99());
-            println!("  error rate: {:.1}%", step_results.last().unwrap().error_rate());
+            println!(
+                "  error rate: {:.1}%",
+                step_results.last().unwrap().error_rate()
+            );
             break;
         }
 
@@ -115,7 +126,9 @@ pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_dur
     }
     println!("{}", "─".repeat(70));
 
-    let found_breaking = step_results.iter().any(|s| s.p99() > 500 || s.error_rate() > 1.0);
+    let found_breaking = step_results
+        .iter()
+        .any(|s| s.p99() > 500 || s.error_rate() > 1.0);
     println!();
     if found_breaking {
         println!("{}", "recommendation:".bold());

@@ -35,7 +35,7 @@ VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
   | grep '"tag_name"' | head -1 | cut -d'"' -f4)
 [ -z "$VERSION" ] && err "could not fetch latest version — check your internet connection"
 
-ARCHIVE="${BIN}-${VERSION}-${TARGET}.tar.gz"
+ARCHIVE="${BIN}-${TARGET}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
 
 info "downloading $BIN $VERSION ($TARGET)..."

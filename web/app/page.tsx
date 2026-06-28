@@ -187,7 +187,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 text-xs font-medium text-accent bg-accent/8 border border-accent/18 rounded-full px-3 py-[0.2rem] mb-8 tracking-[0.01em]"
             >
               <span className="w-[5px] h-[5px] rounded-full bg-accent inline-block" />
-              v0.1.1 · stable
+              v0.2.0 · stable
             </motion.div>
 
             {/* Headline */}

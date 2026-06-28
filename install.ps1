@@ -17,7 +17,7 @@ $release = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/latest
 $version = $release.tag_name
 if (-not $version) { Write-Err "could not fetch latest version" }
 
-$archive = "$Bin-$version-$Target.zip"
+$archive = "$Bin-$Target.zip"
 $url     = "https://github.com/$Repo/releases/download/$version/$archive"
 
 Write-Info "downloading $Bin $version ($Target)..."

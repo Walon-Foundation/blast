@@ -1,31 +1,27 @@
-use std::{path::Path, sync::{Arc}, time::{Duration, Instant}};
+use crate::{config::BlastConfig, runner, stat::Stats};
 use anyhow::Result;
 use reqwest::Client;
+use std::{
+    path::Path,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 use tokio::{sync::Mutex, task::JoinHandle};
-use crate::{config::BlastConfig, runner, stat::Stats};
 
-
-
-pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
+pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = config.endpoint_for("run");
 
-    if endpoints.is_empty(){
+    if endpoints.is_empty() {
         println!("No endpoint to run");
-        return Ok(())
+        return Ok(());
     };
 
-
-    let client = Arc::new(
-        Client::builder().timeout(Duration::from_secs(30)).build()?
-    );
-
+    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).build()?);
 
     let ctx = config.load_setup(&client).await?;
     let base_url = Arc::new(config.base_url.clone());
-    let endpoints = Arc::new(
-        endpoints.into_iter().cloned().collect::<Vec<_>>()
-    );
+    let endpoints = Arc::new(endpoints.into_iter().cloned().collect::<Vec<_>>());
 
     //timeout stuff
     let duration = Duration::from_secs(duration);
@@ -33,16 +29,16 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
     let start_time = Instant::now();
     let mut current_idx = 0;
     let mut last_print = 0u64;
-    
+
     // let results = Arc::new(Mutex::new(Vec::<runner::RequestResult>::new()));
-    let mut handles:Vec<JoinHandle<()>> = Vec::new();
+    let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
     let mut ticker = tokio::time::interval(Duration::from_millis(interval_ms.into()));
     let stats = Arc::new(Mutex::new(Stats::new()));
 
     loop {
         ticker.tick().await;
-        
+
         let elapsed = start_time.elapsed();
         if elapsed >= duration {
             break;
@@ -76,8 +72,6 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
     }
 
     stats.lock().await.print_summary(duration);
-        
+
     Ok(())
 }
-
-
