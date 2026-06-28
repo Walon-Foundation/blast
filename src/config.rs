@@ -8,7 +8,7 @@ pub struct BlastConfig {
     pub base_url:String,
     pub headers: Option<HashMap<String, String>>,
     pub endpoints: Vec<Endpoint>,
-    pub setup: Option<Vec<Endpoint>>
+    pub setup: Option<Vec<Endpoint>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -20,7 +20,8 @@ pub struct Endpoint {
     pub body:          Option<serde_json::Value>,
     pub expect_status: Option<u16>,
     pub extract:       Option<HashMap<String, String>>,
-    pub tags:          Option<Vec<String>>
+    pub tags:          Option<Vec<String>>,
+    pub mock_response: Option<serde_json::Value>
 }
 
 pub const CONFIG_FILENAME:&str = "blast.config.json";
@@ -54,9 +55,7 @@ impl BlastConfig {
         }
 
         let contents = serde_json::to_string_pretty(&Self::template()).with_context(
-            ||format!(
-                "failed to serialized default config"
-            )
+            ||"failed to serialized default config".to_string()
         )?;
         
         fs::write(&config_path, contents).with_context(
@@ -84,9 +83,7 @@ impl BlastConfig {
         )?;
 
         let config:Self = serde_json::from_str(&file_content).with_context(
-            ||format!(
-                "failed to deserialized the config file"
-            )
+            || "failed to deserialized the config file".to_string()
         )?;
 
         //checking is the value in the config are valid
@@ -113,7 +110,8 @@ impl BlastConfig {
                        body:          None,
                        expect_status: Some(200),
                        extract:       None,
-                       tags:          Some(vec!["check".to_string(), "seed".to_string() ])
+                       tags:          Some(vec!["check".to_string(), "seed".to_string() ]),
+                       mock_response: None
                    }
                ]
             ),
@@ -126,7 +124,8 @@ impl BlastConfig {
                     body:          None,
                     expect_status: Some(200),
                     extract:       None,
-                    tags:          Some(vec!["check".to_string(), "seed".to_string() ])
+                    tags:          Some(vec!["check".to_string(), "seed".to_string() ]),
+                    mock_response: None
                 },
                 Endpoint {
                     name:   "register user".to_string(),
@@ -140,6 +139,9 @@ impl BlastConfig {
                     expect_status: Some(201),
                     extract:       None,
                     tags:          None,
+                    mock_response: Some(serde_json::json!({
+                        "access_token":"helllll"
+                    }))
                 },
                 Endpoint {
                     name:   "login".to_string(),
@@ -154,7 +156,8 @@ impl BlastConfig {
                     extract: Some(HashMap::from([
                         ("access_token".to_string(), "data.access_token".to_string()),
                     ])),
-                    tags:   Some(vec![String::from("check"), String::from("seed")])
+                    tags:   Some(vec![String::from("check"), String::from("seed")]),
+                    mock_response: None
                 }
             ]
         }

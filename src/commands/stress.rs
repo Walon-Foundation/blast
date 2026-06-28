@@ -6,7 +6,7 @@ use crate::{config::BlastConfig, runner, stat::Stats};
 use colored::Colorize;
 
 pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_duration:u64) -> Result<()>{
-    let config = BlastConfig::load(&config_path)?;
+    let config = BlastConfig::load(config_path)?;
     let endpoints = config.endpoint_for("stress");
     if endpoints.is_empty() {
         println!("{}", "no endpoints tagged \"stress\" found".yellow());
@@ -90,7 +90,7 @@ pub async fn run(config_path:&Path, min_rps:u64, max_rps:u64, step:u64, step_dur
     println!();
     println!("{}", "─".repeat(70));
     println!(
-        "  {:>6}   {:>8}   {:>7}   {:>6}   {:>6}   {:>6}   {}",
+        "  {:>6}   {:>8}   {:>7}   {:>6}   {:>6}   {:>6}   {:>6}",
         "RPS", "Requests", "Success", "p50", "p95", "p99", "Errors"
     );
     println!("{}", "─".repeat(70));

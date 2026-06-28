@@ -10,7 +10,7 @@ mod extractor;
 mod stat;
 
 #[derive(Parser, Debug)]
-#[command(version = "0.1.0", name = "blast", about = "API load tester and traffic generator")]
+#[command(version, name = "blast", about = "API load tester and traffic generator")]
 struct Cli {
     /// Path to the blast.config.json (default: current directory)
     #[arg(short, long, global = true, default_value = ".")]
@@ -65,6 +65,15 @@ enum Command {
 
         #[arg(long, default_value="15")]
         step_duration: u64
+    },
+
+    /// Create a mock server for frontend developers to build ui quickly
+    Mock {
+        #[arg(long, default_value="3000")]
+        port: u16,
+
+        #[arg(long, default_value="0")]
+        delay:u16
     }
 }
 
@@ -95,6 +104,10 @@ async fn main() -> Result<()>{
 
         Command::Stress { min_rps, max_rps, step, step_duration } => {
             commands::stress::run(&cli.config, min_rps, max_rps, step, step_duration).await?;
+        },
+
+        Command::Mock { port, delay } => {
+            commands::mock::run(&cli.config, port, delay).await?;
         }
     }
 

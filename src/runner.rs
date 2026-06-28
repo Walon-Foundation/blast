@@ -36,7 +36,7 @@ pub async fn execute(
 
     //resolving the headers
     let resolved_headers = match &endpoint.headers {
-        Some(headers) => template::resolve_map(&headers, ctx),
+        Some(headers) => template::resolve_map(headers, ctx),
         None => HashMap::new()
     };
 

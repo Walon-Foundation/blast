@@ -33,10 +33,9 @@ pub async fn run(config_path: &Path) -> Result<()> {
         let result = runner::execute(&client, &merged_endpoint, &config.base_url, &ctx).await;
 
         // extract variables on success only
-        if result.passed {
-            if let (Some(extract_rules), Some(body)) = (&endpoint.extract, &result.body) {
+        if result.passed 
+            && let (Some(extract_rules), Some(body)) = (&endpoint.extract, &result.body) {
                 extractor::extract(body, extract_rules, &mut ctx);
-            }
         }
 
         results.push(result);
