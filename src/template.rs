@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 use fake::{Fake, faker};
 use serde_json::Value;
 // use rand::Rng;
@@ -71,6 +71,17 @@ fn resolved_mixed(s: &str, ctx:&Context) -> String{
 fn resolve_key(key: &str, ctx: &Context) -> String{
     if let Some(val) = ctx.get(key){
         return val.clone()
+    }
+
+    if key.starts_with("env.") {
+        let var_name = &key[4..];
+        return match std::env::var(var_name){
+            Ok(val) => val,
+            Err(_) => {
+                eprintln!("warning: env var {} is not self - left unchanged", var_name);
+                format!("{{{{{}}}}}", key)
+            }
+        }
     }
     match key {
         // internet
