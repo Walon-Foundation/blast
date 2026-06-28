@@ -31,7 +31,7 @@ function Pre({ lang = "bash", children }: { lang?: string; children: string }) {
 
 /* ── Inline code ───────────────────────────────────── */
 
-function C({ children }: { children: string }) {
+function C({ children }: { children: React.ReactNode }) {
   return (
     <code className="font-mono text-[0.82em] bg-raised border border-rim text-[#c4b5fd] px-[0.38em] py-[0.12em] rounded">
       {children}
@@ -147,8 +147,8 @@ export default function DocsPage() {
   return (
     <div className="max-w-[1100px] mx-auto px-6 flex gap-16 items-start">
       {/* ── Sidebar ──────────────────────────────────── */}
-      <aside className="w-44 shrink-0 pt-12 pb-12 max-[900px]:hidden">
-        <div className="sticky top-[4.5rem]">
+      <aside className="w-44 shrink-0 self-start sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto max-[900px]:hidden">
+        <div className="pt-12 pb-12">
           <ActiveSidebar />
         </div>
       </aside>
