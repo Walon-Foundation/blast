@@ -39,9 +39,19 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
-    version: "v0.1.1",
-    date: "June 2025",
+    version: "v0.2.0",
+    date: "June 2026",
     latest: true,
+    entries: [
+      { type: "fix",  text: "Fix blast mock — missing imports, handler wiring, and TcpListener type" },
+      { type: "fix",  text: "Fix docs page TypeScript error — C component children type too narrow" },
+      { type: "docs", text: "Make docs sidebar sticky while content scrolls" },
+      { type: "docs", text: "Fix changelog dates from 2025 to 2026" },
+    ],
+  },
+  {
+    version: "v0.1.1",
+    date: "June 2026",
     entries: [
       { type: "feat", text: "Add blast mock — start a live HTTP server from blast.config.json" },
       { type: "feat", text: "mock_response field on endpoints; {{fake.*}} resolved per request" },
@@ -55,7 +65,7 @@ const RELEASES: Release[] = [
   },
   {
     version: "v0.1.0",
-    date: "May 2025",
+    date: "May 2026",
     entries: [
       { type: "feat", text: "Initial release — blast init, validate, check, seed, run, stress" },
       { type: "feat", text: "blast.config.json as config format — base_url, headers, setup, endpoints" },
