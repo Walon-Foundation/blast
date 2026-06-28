@@ -1,38 +1,17 @@
 # Contributing to Blast
 
-Thanks for your interest in contributing! Blast is a config-driven API load tester written in Rust, and contributions of all kinds are welcome — bug reports, feature requests, documentation improvements, and code.
+Thanks for your interest in contributing! Bug reports, feature requests, docs improvements, and code are all welcome.
 
 ## Getting started
 
-1. **Fork** the repository and clone your fork:
+1. Fork the repo and clone your fork.
+2. Build with `cargo build` (requires a recent stable Rust toolchain).
+3. Run the bundled example: `cargo run -- validate`.
 
-   ```sh
-   git clone https://github.com/<your-username>/blast.git
-   cd blast
-   ```
+## Before opening a PR
 
-2. **Build** the project (requires a recent stable Rust toolchain):
-
-   ```sh
-   cargo build
-   ```
-
-3. **Run it** against the bundled example config:
-
-   ```sh
-   cargo run -- validate
-   ```
-
-## Making changes
-
-- Create a feature branch off `main`:
-
-  ```sh
-  git checkout -b feat/my-change
-  ```
-
-- Keep changes focused — one feature or fix per pull request.
-- Before opening a PR, make sure the project compiles without new warnings and tests pass:
+- Keep changes focused — one feature or fix per PR.
+- Make sure the project compiles cleanly:
 
   ```sh
   cargo check
@@ -41,35 +20,25 @@ Thanks for your interest in contributing! Blast is a config-driven API load test
   cargo fmt --check
   ```
 
-## Commit messages
+- If the change affects user-facing behaviour, update the [docs site](https://github.com/Walon-Foundation/blast/tree/main/web) in the same PR.
 
-Use clear, imperative commit messages, ideally following the [Conventional Commits](https://www.conventionalcommits.org/) style:
+## Commit style
 
-- `feat: add fake.phone placeholder`
-- `fix: handle missing body in extract`
-- `docs: clarify config reference`
+Use clear, imperative commit messages, ideally following [Conventional Commits](https://www.conventionalcommits.org/):
 
-## Pull requests
-
-1. Push your branch to your fork and open a pull request against `main`.
-2. Describe **what** the change does and **why** — link any related issues.
-3. If the change affects user-facing behaviour (CLI flags, config format, output), update the README in the same PR.
+```
+feat: add weight field for traffic distribution
+fix: handle missing body in extract
+docs: clarify mock_response behaviour
+```
 
 ## Reporting bugs
 
-Open an issue with:
-
-- The command you ran and the full output
-- Your `blast.config.json` (redact any secrets!)
-- Your OS and Rust version (`rustc --version`)
-
-## Ideas and feature requests
-
-Open an issue describing the use case before writing code for larger features — it saves everyone time if we agree on the direction first.
+Open an issue with the command you ran, the full output, and your `blast.config.json` (redact secrets).
 
 ## Security issues
 
-Please **do not** open public issues for security vulnerabilities — see [SECURITY.md](SECURITY.md) for the responsible disclosure process.
+**Do not** open public issues — see [SECURITY.md](SECURITY.md) for the responsible disclosure process.
 
 ## License
 
