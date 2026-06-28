@@ -2,8 +2,7 @@ use std::{path::Path, sync::{Arc}, time::{Duration, Instant}};
 use anyhow::Result;
 use reqwest::Client;
 use tokio::{sync::Mutex, task::JoinHandle};
-use::colored::Colorize;
-use crate::{config::BlastConfig, runner};
+use crate::{config::BlastConfig, runner, stat::Stats};
 
 
 
@@ -35,10 +34,11 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
     let mut current_idx = 0;
     let mut last_print = 0u64;
     
-    let results = Arc::new(Mutex::new(Vec::<runner::RequestResult>::new()));
+    // let results = Arc::new(Mutex::new(Vec::<runner::RequestResult>::new()));
     let mut handles:Vec<JoinHandle<()>> = Vec::new();
 
     let mut ticker = tokio::time::interval(Duration::from_millis(interval_ms.into()));
+    let stats = Arc::new(Mutex::new(Stats::new()));
 
     loop {
         ticker.tick().await;
@@ -51,17 +51,7 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
         let elapsed_secs = elapsed.as_secs();
         if elapsed_secs > last_print {
             last_print = elapsed_secs;
-            let r = results.lock().await;
-            let total   = r.len();
-            let success = r.iter().filter(|r| r.passed).count();
-            let mut latencies: Vec<u128> = r.iter().map(|r| r.latency_ms).collect();
-            latencies.sort_unstable();
-            let p99 = percentile(&latencies, 99);
-            drop(r);
-            println!(
-                "  elapsed: {}s   sent: {}   success: {}   p99: {}ms",
-                elapsed_secs, total, success, p99
-            );
+            stats.lock().await.print_progress(elapsed_secs);
         }
 
         let endpoint = endpoints[current_idx % endpoints.len()].clone();
@@ -70,11 +60,12 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
         let client = Arc::clone(&client);
         let base_url = Arc::clone(&base_url);
         let ctx = ctx.clone();
-        let results = Arc::clone(&results);
+        // let results = Arc::clone(&results);
+        let stats = Arc::clone(&stats);
 
         let handle = tokio::spawn(async move {
             let result = runner::execute(&client, &endpoint, &base_url, &ctx).await;
-            results.lock().await.push(result);
+            stats.lock().await.record(result);
         });
 
         handles.push(handle);
@@ -84,42 +75,9 @@ pub async fn run(config_path:&Path, rps: u32, duration:u64) -> Result<()> {
         handle.await?;
     }
 
-    let results   = results.lock().await;
-    let total     = results.len();
-    let passed    = results.iter().filter(|r| r.passed).count();
-    let failed    = total - passed;
-    let mut latencies: Vec<u128> = results.iter().map(|r| r.latency_ms).collect();
-    latencies.sort_unstable();
-
-    println!();
-    println!("  Total requests:  {}", total);
-    println!("  Duration:        {:?}s", duration);
-    // println!("  Req/sec:         {:.1}", total as f64 / duration);
-    println!(
-        "  Success rate:    {}",
-        format!("{:.1}%", (passed as f64 / total as f64) * 100.0)
-            .green()
-    );
-    println!();
-    println!("  Latency");
-    println!("    p50:   {}ms", percentile(&latencies, 50));
-    println!("    p95:   {}ms", percentile(&latencies, 95));
-    println!("    p99:   {}ms", percentile(&latencies, 99));
-    println!("    p999:  {}ms", percentile(&latencies, 999));
-    println!();
-    if failed > 0 {
-        println!("  Errors: {}", failed.to_string().red());
-    }
+    stats.lock().await.print_summary(duration);
         
     Ok(())
 }
 
 
-fn percentile(sorted: &[u128], p: usize) -> u128 {
-    if sorted.is_empty() {
-        return 0;
-    }
-    let index = ((p as f64 / 100.0) * sorted.len() as f64) as usize;
-    let index = index.min(sorted.len() - 1);
-    sorted[index]
-}
