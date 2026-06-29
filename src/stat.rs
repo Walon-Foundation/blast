@@ -111,6 +111,24 @@ impl Stats {
         false
     }
 
+    pub fn to_json(&self, duration: std::time::Duration) -> serde_json::Value {
+        serde_json::json!({
+            "total":         self.total(),
+            "passed":        self.passed(),
+            "failed":        self.failed(),
+            "success_rate":  self.success_rate(),
+            "error_rate":    self.error_rate(),
+            "duration_secs": duration.as_secs(),
+            "latency": {
+                "p50":  self.p50(),
+                "p95":  self.p95(),
+                "p99":  self.p99(),
+                "p999": self.p999(),
+            },
+            "requests": self.results,
+        })
+    }
+
     pub fn print_progress(&self, elapsed_time: u64) {
         println!(
             "  elapsed: {}s   sent: {}   success: {}   p99: {}ms",

@@ -7,7 +7,7 @@ use std::time::Instant;
 use crate::config::Endpoint;
 use crate::template;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct RequestResult {
     pub endpoint_name: String,
     pub method: String,

@@ -10,6 +10,14 @@ mod runner;
 mod stat;
 mod template;
 
+#[derive(Debug, Clone, clap::ValueEnum)]
+pub enum OutputFormat {
+    /// Human-readable terminal output (default)
+    Terminal,
+    /// JSON object written to stdout
+    Json,
+}
+
 #[derive(Parser, Debug)]
 #[command(
     version,
@@ -67,6 +75,10 @@ enum Command {
         /// Assertion like "p99<200ms" or "error-rate<1%" — exits non-zero on failure
         #[arg(long = "assert", value_name = "ASSERTION")]
         assert_flags: Vec<String>,
+
+        /// Output format for results
+        #[arg(long, value_enum, default_value = "terminal")]
+        output: OutputFormat,
     },
 
     /// Ramps from mins-rps to max-rps in steps, calls the blast run logic for each step
@@ -86,6 +98,10 @@ enum Command {
         /// Assertion like "p99<200ms" or "error-rate<1%" — exits non-zero on failure
         #[arg(long = "assert", value_name = "ASSERTION")]
         assert_flags: Vec<String>,
+
+        /// Output format for results
+        #[arg(long, value_enum, default_value = "terminal")]
+        output: OutputFormat,
     },
 
     /// Create a mock server for frontend developers to build ui quickly
@@ -125,8 +141,8 @@ async fn main() -> Result<()> {
             commands::seed::run(&cli.config, count, concurrency, cli.vars.as_deref()).await?;
         }
 
-        Command::Run { rps, duration, ramp_up, assert_flags } => {
-            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref(), assert_flags).await?;
+        Command::Run { rps, duration, ramp_up, assert_flags, output } => {
+            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref(), assert_flags, output).await?;
         }
 
         Command::Stress {
@@ -135,6 +151,7 @@ async fn main() -> Result<()> {
             step,
             step_duration,
             assert_flags,
+            output,
         } => {
             commands::stress::run(
                 &cli.config,
@@ -144,6 +161,7 @@ async fn main() -> Result<()> {
                 step_duration,
                 cli.vars.as_deref(),
                 assert_flags,
+                output,
             )
             .await?;
         }
