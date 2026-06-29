@@ -17,7 +17,7 @@ struct IterationResult {
 
 pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoints_with_headers("seed");
+    let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("seed"));
 
     if endpoints.is_empty() {
         println!(

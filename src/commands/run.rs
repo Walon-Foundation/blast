@@ -10,7 +10,7 @@ use tokio::{sync::Mutex, task::JoinHandle};
 
 pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoints_with_headers("run");
+    let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
 
     if endpoints.is_empty() {
         println!("No endpoint to run");

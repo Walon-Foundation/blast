@@ -21,7 +21,7 @@ pub async fn run(
     }
 
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoints_with_headers("stress");
+    let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("stress"));
     if endpoints.is_empty() {
         println!("{}", "no endpoints tagged \"stress\" found".yellow());
         return Ok(());
