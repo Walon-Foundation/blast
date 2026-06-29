@@ -17,7 +17,7 @@ struct IterationResult {
 
 pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoint_for("seed");
+    let endpoints = config.endpoints_with_headers("seed");
 
     if endpoints.is_empty() {
         println!(
@@ -31,7 +31,7 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<(
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(10)).build()?);
 
     //each tasks need to own endpoint
-    let endpoints = Arc::new(endpoints.into_iter().cloned().collect::<Vec<_>>());
+    let endpoints = Arc::new(endpoints);
 
     let base_url = Arc::new(config.base_url);
     let results = Arc::new(Mutex::new(Vec::<IterationResult>::new()));

@@ -10,7 +10,7 @@ use tokio::{sync::Mutex, task::JoinHandle};
 
 pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoint_for("run");
+    let endpoints = config.endpoints_with_headers("run");
 
     if endpoints.is_empty() {
         println!("No endpoint to run");
@@ -21,11 +21,15 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
 
     let ctx = config.load_setup(&client).await?;
     let base_url = Arc::new(config.base_url.clone());
-    let endpoints = Arc::new(endpoints.into_iter().cloned().collect::<Vec<_>>());
+    let endpoints = Arc::new(endpoints);
+
+    if rps == 0 {
+        anyhow::bail!("rps must be at least 1");
+    }
 
     //timeout stuff
     let duration = Duration::from_secs(duration);
-    let interval_ms = 1000 / rps;
+    let interval_ms = (1000u32 / rps).max(1);
     let start_time = Instant::now();
     let mut current_idx = 0;
     let mut last_print = 0u64;

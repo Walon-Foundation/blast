@@ -49,24 +49,25 @@ impl Stats {
             return 0;
         }
 
-        let index = ((p as f64 / 100.0) * sorted.len() as f64) as usize;
+        let index = ((p as f64 / 1000.0) * sorted.len() as f64) as usize;
         sorted[index.min(sorted.len() - 1)]
     }
 
     pub fn p50(&self) -> u128 {
-        self.percentile(50)
+        self.percentile(500)
     }
     pub fn p95(&self) -> u128 {
-        self.percentile(95)
+        self.percentile(950)
     }
     pub fn p99(&self) -> u128 {
-        self.percentile(99)
+        self.percentile(990)
     }
     pub fn p999(&self) -> u128 {
         self.percentile(999)
     }
 
     pub fn print_summary(&self, duration: Duration) {
+        let (p50, p95, p99, p999) = self.summary_percentiles();
         println!();
         println!("  Total requests:  {}", self.total());
         println!("  Duration:        {:?}s", duration);
@@ -77,10 +78,10 @@ impl Stats {
         );
         println!();
         println!("  Latency");
-        println!("    p50:   {}ms", self.p50());
-        println!("    p95:   {}ms", self.p95());
-        println!("    p99:   {}ms", self.p99());
-        println!("    p999:  {}ms", self.p999());
+        println!("    p50:   {}ms", p50);
+        println!("    p95:   {}ms", p95);
+        println!("    p99:   {}ms", p99);
+        println!("    p999:  {}ms", p999);
         println!();
         if self.failed() > 0 {
             println!("  Errors: {}", self.failed().to_string().red());
@@ -88,7 +89,8 @@ impl Stats {
     }
 
     pub fn print_step(&self, rps: u64) -> bool {
-        let breaking = self.p99() > 500 || self.error_rate() > 1.0;
+        let (p50, _p95, p99, _p999) = self.summary_percentiles();
+        let breaking = p99 > 500 || self.error_rate() > 1.0;
 
         // print step row
         let row = format!(
@@ -96,8 +98,8 @@ impl Stats {
             rps,
             self.total(),
             format!("{:.1}%", self.success_rate()),
-            self.p50(),
-            self.p99(),
+            p50,
+            p99,
             self.failed()
         );
         if breaking {
@@ -125,5 +127,18 @@ impl Stats {
         let mut v: Vec<u128> = self.results.iter().map(|r| r.latency_ms).collect();
         v.sort_unstable();
         v
+    }
+
+    fn summary_percentiles(&self) -> (u128, u128, u128, u128) {
+        let sorted = self.sorted_latencies();
+        if sorted.is_empty() {
+            return (0, 0, 0, 0);
+        }
+        let len = sorted.len();
+        let pick = |p: usize| -> u128 {
+            let index = ((p as f64 / 1000.0) * len as f64) as usize;
+            sorted[index.min(len - 1)]
+        };
+        (pick(500), pick(950), pick(990), pick(999))
     }
 }

@@ -224,4 +224,23 @@ impl BlastConfig {
             })
             .collect()
     }
+
+    /// Returns cloned endpoints for `tag` with global `config.headers` merged in.
+    /// Endpoint-level headers take precedence over global headers.
+    pub fn endpoints_with_headers(&self, tag: &str) -> Vec<Endpoint> {
+        self.endpoint_for(tag)
+            .into_iter()
+            .map(|ep| {
+                let mut merged = ep.clone();
+                if let Some(global) = &self.headers {
+                    let mut merged_headers = global.clone();
+                    if let Some(ep_headers) = &ep.headers {
+                        merged_headers.extend(ep_headers.clone());
+                    }
+                    merged.headers = Some(merged_headers);
+                }
+                merged
+            })
+            .collect()
+    }
 }
