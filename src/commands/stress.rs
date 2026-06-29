@@ -16,6 +16,7 @@ pub async fn run(
     step: u64,
     step_duration: u64,
     vars: Option<&std::path::Path>,
+    assert_flags: Vec<String>,
 ) -> Result<()> {
     if min_rps == 0 {
         anyhow::bail!("rps must be at least 1");
@@ -150,6 +151,27 @@ pub async fn run(
             "{}",
             format!("API held at {} req/s — try a higher --max-rps", max_rps).green()
         );
+    }
+
+    if !assert_flags.is_empty() {
+        let mut agg = crate::stat::Stats::new();
+        for s in &step_results {
+            agg.absorb(s);
+        }
+        let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
+            .map(|s| crate::assertion::parse(s))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        let results = agg.evaluate(&assertions);
+        let failed: Vec<_> = results.iter().filter(|r| !r.passed).collect();
+        println!();
+        if failed.is_empty() {
+            println!("  all assertions passed");
+        } else {
+            for r in &failed {
+                println!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+            }
+            anyhow::bail!("{} assertion(s) failed", failed.len());
+        }
     }
 
     Ok(())
