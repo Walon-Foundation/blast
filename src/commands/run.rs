@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
-pub async fn run(config_path: &Path, rps: u32, duration: u64, vars: Option<&std::path::Path>) -> Result<()> {
+pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
 
@@ -31,6 +31,36 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, vars: Option<&std:
 
     if rps == 0 {
         anyhow::bail!("rps must be at least 1");
+    }
+
+    if ramp_up > 0 {
+        println!("  ramping up — {}s", ramp_up);
+        let ramp_end = Instant::now() + Duration::from_secs(ramp_up);
+        let mut ramp_idx: usize = 0;
+        let mut ramp_handles = Vec::new();
+
+        while Instant::now() < ramp_end {
+            let elapsed_secs = ramp_up.saturating_sub(
+                ramp_end.saturating_duration_since(Instant::now()).as_secs()
+            );
+            let fraction = (elapsed_secs as f64 / ramp_up as f64).min(1.0);
+            let current_rps = ((fraction * rps as f64).max(1.0)) as u64;
+            let interval_ms = (1000u64 / current_rps).max(1);
+
+            let client_c = Arc::clone(&client);
+            let ep = endpoints[ramp_idx % endpoints.len()].clone();
+            let base = Arc::clone(&base_url);
+            let ctx_snap = ctx.clone();
+            ramp_handles.push(tokio::spawn(async move {
+                let _ = runner::execute(&client_c, &ep, &base, &ctx_snap).await;
+            }));
+            ramp_idx = ramp_idx.wrapping_add(1);
+
+            tokio::time::sleep(Duration::from_millis(interval_ms)).await;
+        }
+
+        for h in ramp_handles { let _ = h.await; }
+        println!("  ramp-up complete — measuring at {} req/s", rps);
     }
 
     //timeout stuff
