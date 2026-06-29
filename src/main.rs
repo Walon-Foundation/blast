@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
+mod assertion;
 mod commands;
 mod config;
 mod extractor;
@@ -62,6 +63,10 @@ enum Command {
         /// Ramp from 0 to target RPS over this many seconds before measuring (0 = disabled)
         #[arg(long, default_value = "0")]
         ramp_up: u64,
+
+        /// Assertion like "p99<200ms" or "error-rate<1%" — exits non-zero on failure
+        #[arg(long = "assert", value_name = "ASSERTION")]
+        assert_flags: Vec<String>,
     },
 
     /// Ramps from mins-rps to max-rps in steps, calls the blast run logic for each step
@@ -77,6 +82,10 @@ enum Command {
 
         #[arg(long, default_value = "15")]
         step_duration: u64,
+
+        /// Assertion like "p99<200ms" or "error-rate<1%" — exits non-zero on failure
+        #[arg(long = "assert", value_name = "ASSERTION")]
+        assert_flags: Vec<String>,
     },
 
     /// Create a mock server for frontend developers to build ui quickly
@@ -116,8 +125,8 @@ async fn main() -> Result<()> {
             commands::seed::run(&cli.config, count, concurrency, cli.vars.as_deref()).await?;
         }
 
-        Command::Run { rps, duration, ramp_up } => {
-            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref()).await?;
+        Command::Run { rps, duration, ramp_up, assert_flags } => {
+            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref(), assert_flags).await?;
         }
 
         Command::Stress {
@@ -125,6 +134,7 @@ async fn main() -> Result<()> {
             max_rps,
             step,
             step_duration,
+            assert_flags,
         } => {
             commands::stress::run(
                 &cli.config,
@@ -133,6 +143,7 @@ async fn main() -> Result<()> {
                 step,
                 step_duration,
                 cli.vars.as_deref(),
+                assert_flags,
             )
             .await?;
         }

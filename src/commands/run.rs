@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
-pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>) -> Result<()> {
+pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>, assert_flags: Vec<String>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
@@ -124,7 +124,24 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
             handle.await?;
         }
 
-        stats.lock().await.print_summary(duration);
+        let stats_guard = stats.lock().await;
+        stats_guard.print_summary(duration);
+        if !assert_flags.is_empty() {
+            let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
+                .map(|s| crate::assertion::parse(s))
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            let results = stats_guard.evaluate(&assertions);
+            let failed: Vec<_> = results.iter().filter(|r| !r.passed).collect();
+            println!();
+            if failed.is_empty() {
+                println!("  all assertions passed");
+            } else {
+                for r in &failed {
+                    println!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+                }
+                anyhow::bail!("{} assertion(s) failed", failed.len());
+            }
+        }
     } else {
         // Existing round-robin path — no change
         let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
@@ -213,7 +230,24 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
             handle.await?;
         }
 
-        stats.lock().await.print_summary(duration);
+        let stats_guard = stats.lock().await;
+        stats_guard.print_summary(duration);
+        if !assert_flags.is_empty() {
+            let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
+                .map(|s| crate::assertion::parse(s))
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            let results = stats_guard.evaluate(&assertions);
+            let failed: Vec<_> = results.iter().filter(|r| !r.passed).collect();
+            println!();
+            if failed.is_empty() {
+                println!("  all assertions passed");
+            } else {
+                for r in &failed {
+                    println!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+                }
+                anyhow::bail!("{} assertion(s) failed", failed.len());
+            }
+        }
     }
 
     Ok(())
