@@ -147,7 +147,7 @@ export default function DocsPage() {
   return (
     <div className="max-w-[1100px] mx-auto px-6 flex gap-16 items-start">
       {/* ── Sidebar ──────────────────────────────────── */}
-      <aside className="w-44 shrink-0 self-start sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto max-[900px]:hidden">
+      <aside className="w-44 shrink-0 self-start sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-[900px]:hidden">
         <div className="pt-12 pb-12">
           <ActiveSidebar />
         </div>
