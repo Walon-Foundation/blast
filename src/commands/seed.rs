@@ -15,7 +15,7 @@ struct IterationResult {
     requests: usize,
 }
 
-pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<()> {
+pub async fn run(config_path: &Path, count: u32, concurrency: usize, vars: Option<&std::path::Path>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("seed"));
 
@@ -29,6 +29,12 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<(
     }
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(10)).cookie_store(true).build()?);
+
+    let file_vars: Arc<HashMap<String, String>> = Arc::new(if let Some(vars_path) = vars {
+        crate::config::load_vars(vars_path)?
+    } else {
+        HashMap::new()
+    });
 
     //each tasks need to own endpoint
     let endpoints = Arc::new(endpoints);
@@ -52,11 +58,13 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<(
         let endpoints = Arc::clone(&endpoints);
         let semaphore = Arc::clone(&semaphore);
         let results = Arc::clone(&results);
+        let file_vars = Arc::clone(&file_vars);
 
         let handle = tokio::spawn(async move {
             let _permit = semaphore.acquire_owned().await.unwrap();
 
-            let mut ctx: HashMap<String, String> = HashMap::new();
+            // seed ctx with vars at lowest priority; extractions will override
+            let mut ctx: HashMap<String, String> = (*file_vars).clone();
             let mut iteration_passed = true;
 
             for endpoint in endpoints.iter() {

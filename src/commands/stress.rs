@@ -15,6 +15,7 @@ pub async fn run(
     max_rps: u64,
     step: u64,
     step_duration: u64,
+    vars: Option<&std::path::Path>,
 ) -> Result<()> {
     if min_rps == 0 {
         anyhow::bail!("rps must be at least 1");
@@ -31,7 +32,13 @@ pub async fn run(
 
     let endpoints = Arc::new(endpoints);
 
-    let ctx = config.load_setup(&client).await?;
+    let mut ctx = config.load_setup(&client).await?;
+    if let Some(vars_path) = vars {
+        let file_vars = crate::config::load_vars(vars_path)?;
+        for (k, v) in file_vars {
+            ctx.entry(k).or_insert(v);
+        }
+    }
     let base_url = Arc::new(config.base_url.clone());
     let mut step_results = Vec::<Stats>::new();
     let mut current_rps = min_rps;

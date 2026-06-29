@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
-pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
+pub async fn run(config_path: &Path, rps: u32, duration: u64, vars: Option<&std::path::Path>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
 
@@ -19,7 +19,13 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
 
-    let ctx = config.load_setup(&client).await?;
+    let mut ctx = config.load_setup(&client).await?;
+    if let Some(vars_path) = vars {
+        let file_vars = crate::config::load_vars(vars_path)?;
+        for (k, v) in file_vars {
+            ctx.entry(k).or_insert(v);
+        }
+    }
     let base_url = Arc::new(config.base_url.clone());
     let endpoints = Arc::new(endpoints);
 

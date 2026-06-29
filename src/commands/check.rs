@@ -9,7 +9,7 @@ use crate::config::BlastConfig;
 use crate::extractor;
 use crate::runner;
 
-pub async fn run(config_path: &Path) -> Result<()> {
+pub async fn run(config_path: &Path, vars: Option<&Path>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(10))
@@ -17,6 +17,12 @@ pub async fn run(config_path: &Path) -> Result<()> {
         .build()?;
 
     let mut ctx: HashMap<String, String> = HashMap::new();
+    if let Some(vars_path) = vars {
+        let file_vars = crate::config::load_vars(vars_path)?;
+        for (k, v) in file_vars {
+            ctx.entry(k).or_insert(v);
+        }
+    }
     let mut results: Vec<runner::RequestResult> = Vec::new();
 
     for endpoint in &config.endpoints {

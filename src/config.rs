@@ -7,6 +7,35 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub fn load_vars(path: &Path) -> Result<HashMap<String, String>> {
+    let content = fs::read_to_string(path)
+        .with_context(|| format!("failed to read vars file {}", path.display()))?;
+    let raw: serde_json::Value =
+        serde_json::from_str(&content).with_context(|| "vars file must be valid JSON")?;
+    let obj = raw
+        .as_object()
+        .ok_or_else(|| anyhow::anyhow!("--vars file must be a JSON object at the top level"))?;
+    let mut map = HashMap::new();
+    for (key, value) in obj {
+        match value {
+            serde_json::Value::String(s) => {
+                map.insert(key.clone(), s.clone());
+            }
+            serde_json::Value::Number(n) => {
+                map.insert(key.clone(), n.to_string());
+            }
+            serde_json::Value::Bool(b) => {
+                map.insert(key.clone(), b.to_string());
+            }
+            _ => eprintln!(
+                "warning: --vars key \"{}\" is not a scalar — skipped",
+                key
+            ),
+        }
+    }
+    Ok(map)
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BlastConfig {
     pub base_url: String,
