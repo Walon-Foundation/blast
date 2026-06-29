@@ -9,6 +9,7 @@ use std::{
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
+#[allow(clippy::too_many_arguments)]
 pub async fn run(
     config_path: &Path,
     min_rps: u64,
@@ -30,7 +31,12 @@ pub async fn run(
         return Ok(());
     }
 
-    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
+    let client = Arc::new(
+        Client::builder()
+            .timeout(Duration::from_secs(30))
+            .cookie_store(true)
+            .build()?,
+    );
 
     let endpoints = Arc::new(endpoints);
 
@@ -202,18 +208,18 @@ pub async fn run(
                 .unwrap_or_else(|_| config_path.display().to_string());
             let total_secs = step_duration * step_results.len() as u64;
             let data = crate::report::ReportData {
-                config_path:   abs_config,
-                generated_at:  format!("unix:{}", now),
-                target_rps:    max_rps,
+                config_path: abs_config,
+                generated_at: format!("unix:{}", now),
+                target_rps: max_rps,
                 duration_secs: total_secs,
-                total:         agg.total(),
-                passed:        agg.passed(),
-                success_rate:  agg.success_rate(),
-                p50:           agg.p50(),
-                p95:           agg.p95(),
-                p99:           agg.p99(),
-                p999:          agg.p999(),
-                endpoints:     crate::report::build_endpoint_rows(agg.results()),
+                total: agg.total(),
+                passed: agg.passed(),
+                success_rate: agg.success_rate(),
+                p50: agg.p50(),
+                p95: agg.p95(),
+                p99: agg.p99(),
+                p999: agg.p999(),
+                endpoints: crate::report::build_endpoint_rows(agg.results()),
             };
             crate::report::serve(crate::report::render(&data)).await?;
         }
@@ -228,16 +234,16 @@ pub async fn run(
             .map(|p| p.display().to_string())
             .unwrap_or_else(|_| config_path.display().to_string());
         let record = crate::history::HistoryRecord {
-            config_path:  abs_config.clone(),
-            timestamp:    std::time::SystemTime::now()
+            config_path: abs_config.clone(),
+            timestamp: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_secs())
                 .unwrap_or(0),
-            p50:          agg.p50(),
-            p95:          agg.p95(),
-            p99:          agg.p99(),
-            p999:         agg.p999(),
-            total:        agg.total(),
+            p50: agg.p50(),
+            p95: agg.p95(),
+            p99: agg.p99(),
+            p999: agg.p999(),
+            total: agg.total(),
             success_rate: agg.success_rate(),
         };
         if let Some(prev) = crate::history::load_last(&abs_config) {
@@ -251,7 +257,8 @@ pub async fn run(
         for s in &step_results {
             agg.absorb(s);
         }
-        let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
+        let assertions: Vec<crate::assertion::Assertion> = assert_flags
+            .iter()
             .map(|s| crate::assertion::parse(s))
             .collect::<anyhow::Result<Vec<_>>>()?;
         let results = agg.evaluate(&assertions);
@@ -265,7 +272,7 @@ pub async fn run(
             }
         } else {
             for r in &failed {
-                eprintln!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+                eprintln!("  ✗  {} (actual: {:.1})", r.assertion.raw, r.actual);
             }
             anyhow::bail!("{} assertion(s) failed", failed.len());
         }

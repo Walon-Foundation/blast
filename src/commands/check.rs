@@ -22,20 +22,29 @@ fn evaluate_assertions(
                 let actual_str = match val {
                     serde_json::Value::String(s) => s.clone(),
                     serde_json::Value::Number(n) => n.to_string(),
-                    serde_json::Value::Bool(b)   => b.to_string(),
-                    _                            => "[object]".to_string(),
+                    serde_json::Value::Bool(b) => b.to_string(),
+                    _ => "[object]".to_string(),
                 };
                 if let Some(threshold_str) = expected.strip_prefix('>') {
                     let threshold: f64 = threshold_str.trim().parse().unwrap_or(0.0);
-                    let actual_f: f64  = actual_str.parse().unwrap_or(f64::NEG_INFINITY);
-                    (actual_f > threshold, format!("{} > {} (got: {})", path, threshold, actual_str))
+                    let actual_f: f64 = actual_str.parse().unwrap_or(f64::NEG_INFINITY);
+                    (
+                        actual_f > threshold,
+                        format!("{} > {} (got: {})", path, threshold, actual_str),
+                    )
                 } else if let Some(threshold_str) = expected.strip_prefix('<') {
                     let threshold: f64 = threshold_str.trim().parse().unwrap_or(0.0);
-                    let actual_f: f64  = actual_str.parse().unwrap_or(f64::INFINITY);
-                    (actual_f < threshold, format!("{} < {} (got: {})", path, threshold, actual_str))
+                    let actual_f: f64 = actual_str.parse().unwrap_or(f64::INFINITY);
+                    (
+                        actual_f < threshold,
+                        format!("{} < {} (got: {})", path, threshold, actual_str),
+                    )
                 } else {
                     let ok = actual_str == *expected;
-                    (ok, format!("{} == \"{}\" (got: \"{}\")", path, expected, actual_str))
+                    (
+                        ok,
+                        format!("{} == \"{}\" (got: \"{}\")", path, expected, actual_str),
+                    )
                 }
             }
         };
@@ -90,18 +99,22 @@ pub async fn run(config_path: &Path, vars: Option<&Path>) -> Result<()> {
         // evaluate assertions on success only
         let mut assertion_failures = 0usize;
         let mut assertion_lines: Vec<(bool, String)> = Vec::new();
-        if result.passed {
-            if let (Some(assert_rules), Some(body)) = (&endpoint.assert, &result.body) {
-                for (_path, passed, reason) in evaluate_assertions(body, assert_rules) {
-                    if !passed {
-                        assertion_failures += 1;
-                    }
-                    assertion_lines.push((passed, reason));
+        if result.passed
+            && let (Some(assert_rules), Some(body)) = (&endpoint.assert, &result.body)
+        {
+            for (_path, passed, reason) in evaluate_assertions(body, assert_rules) {
+                if !passed {
+                    assertion_failures += 1;
                 }
+                assertion_lines.push((passed, reason));
             }
         }
 
-        results.push(CheckResult { req: result, assertion_failures, assertion_lines });
+        results.push(CheckResult {
+            req: result,
+            assertion_failures,
+            assertion_lines,
+        });
     }
 
     // ── print results ─────────────────────────────────────────────────────────
@@ -156,7 +169,11 @@ pub async fn run(config_path: &Path, vars: Option<&Path>) -> Result<()> {
     // ── summary ───────────────────────────────────────────────────────────────
     let total_assertion_failures: usize = results.iter().map(|cr| cr.assertion_failures).sum();
     let status_failed = results.iter().filter(|cr| !cr.req.passed).count();
-    let failed = status_failed + results.iter().filter(|cr| cr.req.passed && cr.assertion_failures > 0).count();
+    let failed = status_failed
+        + results
+            .iter()
+            .filter(|cr| cr.req.passed && cr.assertion_failures > 0)
+            .count();
     let passed = results.len() - failed;
     let total = results.len();
 
