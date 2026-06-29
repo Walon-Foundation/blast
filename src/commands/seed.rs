@@ -28,7 +28,7 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize) -> Result<(
         return Ok(());
     }
 
-    let client = Arc::new(Client::builder().timeout(Duration::from_secs(10)).build()?);
+    let client = Arc::new(Client::builder().timeout(Duration::from_secs(10)).cookie_store(true).build()?);
 
     //each tasks need to own endpoint
     let endpoints = Arc::new(endpoints);

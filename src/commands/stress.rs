@@ -27,7 +27,7 @@ pub async fn run(
         return Ok(());
     }
 
-    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).build()?);
+    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
 
     let endpoints = Arc::new(endpoints);
 
