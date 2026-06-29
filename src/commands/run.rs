@@ -133,6 +133,28 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
                 println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
             }
         }
+
+        let abs_config = std::fs::canonicalize(config_path)
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|_| config_path.display().to_string());
+        let record = crate::history::HistoryRecord {
+            config_path:  abs_config.clone(),
+            timestamp:    std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+            p50:          stats_guard.p50(),
+            p95:          stats_guard.p95(),
+            p99:          stats_guard.p99(),
+            p999:         stats_guard.p999(),
+            total:        stats_guard.total(),
+            success_rate: stats_guard.success_rate(),
+        };
+        if let Some(prev) = crate::history::load_last(&abs_config) {
+            crate::history::diff_print(&prev, &record);
+        }
+        let _ = crate::history::save(&record);
+
         if !assert_flags.is_empty() {
             let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
                 .map(|s| crate::assertion::parse(s))
@@ -250,6 +272,28 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
                 println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
             }
         }
+
+        let abs_config = std::fs::canonicalize(config_path)
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|_| config_path.display().to_string());
+        let record = crate::history::HistoryRecord {
+            config_path:  abs_config.clone(),
+            timestamp:    std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+            p50:          stats_guard.p50(),
+            p95:          stats_guard.p95(),
+            p99:          stats_guard.p99(),
+            p999:         stats_guard.p999(),
+            total:        stats_guard.total(),
+            success_rate: stats_guard.success_rate(),
+        };
+        if let Some(prev) = crate::history::load_last(&abs_config) {
+            crate::history::diff_print(&prev, &record);
+        }
+        let _ = crate::history::save(&record);
+
         if !assert_flags.is_empty() {
             let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
                 .map(|s| crate::assertion::parse(s))

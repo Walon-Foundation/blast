@@ -6,6 +6,7 @@ mod assertion;
 mod commands;
 mod config;
 mod extractor;
+mod history;
 mod runner;
 mod stat;
 mod template;
