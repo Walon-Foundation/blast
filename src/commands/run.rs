@@ -127,10 +127,34 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
         }
 
         let stats_guard = stats.lock().await;
-        match output {
+        match &output {
             crate::OutputFormat::Terminal => stats_guard.print_summary(duration),
             crate::OutputFormat::Json => {
                 println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
+            }
+            crate::OutputFormat::Html => {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let abs_config = std::fs::canonicalize(config_path)
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|_| config_path.display().to_string());
+                let data = crate::report::ReportData {
+                    config_path:   abs_config,
+                    generated_at:  format!("unix:{}", now),
+                    target_rps:    rps as u64,
+                    duration_secs: duration.as_secs(),
+                    total:         stats_guard.total(),
+                    passed:        stats_guard.passed(),
+                    success_rate:  stats_guard.success_rate(),
+                    p50:           stats_guard.p50(),
+                    p95:           stats_guard.p95(),
+                    p99:           stats_guard.p99(),
+                    p999:          stats_guard.p999(),
+                    endpoints:     crate::report::build_endpoint_rows(stats_guard.results()),
+                };
+                println!("{}", crate::report::render(&data));
             }
         }
 
@@ -266,10 +290,34 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
         }
 
         let stats_guard = stats.lock().await;
-        match output {
+        match &output {
             crate::OutputFormat::Terminal => stats_guard.print_summary(duration),
             crate::OutputFormat::Json => {
                 println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
+            }
+            crate::OutputFormat::Html => {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|d| d.as_secs())
+                    .unwrap_or(0);
+                let abs_config = std::fs::canonicalize(config_path)
+                    .map(|p| p.display().to_string())
+                    .unwrap_or_else(|_| config_path.display().to_string());
+                let data = crate::report::ReportData {
+                    config_path:   abs_config,
+                    generated_at:  format!("unix:{}", now),
+                    target_rps:    rps as u64,
+                    duration_secs: duration.as_secs(),
+                    total:         stats_guard.total(),
+                    passed:        stats_guard.passed(),
+                    success_rate:  stats_guard.success_rate(),
+                    p50:           stats_guard.p50(),
+                    p95:           stats_guard.p95(),
+                    p99:           stats_guard.p99(),
+                    p999:          stats_guard.p999(),
+                    endpoints:     crate::report::build_endpoint_rows(stats_guard.results()),
+                };
+                println!("{}", crate::report::render(&data));
             }
         }
 

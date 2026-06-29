@@ -119,7 +119,7 @@ pub async fn run(
         current_rps += step;
     }
 
-    match output {
+    match &output {
         crate::OutputFormat::Terminal => {
             println!();
             println!("{}", "─".repeat(70));
@@ -187,6 +187,35 @@ pub async fn run(
                 "aggregate": agg.to_json(total_duration),
             });
             println!("{}", serde_json::to_string_pretty(&json)?);
+        }
+        crate::OutputFormat::Html => {
+            let mut agg = crate::stat::Stats::new();
+            for s in &step_results {
+                agg.absorb(s);
+            }
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let abs_config = std::fs::canonicalize(config_path)
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| config_path.display().to_string());
+            let total_secs = step_duration * step_results.len() as u64;
+            let data = crate::report::ReportData {
+                config_path:   abs_config,
+                generated_at:  format!("unix:{}", now),
+                target_rps:    max_rps,
+                duration_secs: total_secs,
+                total:         agg.total(),
+                passed:        agg.passed(),
+                success_rate:  agg.success_rate(),
+                p50:           agg.p50(),
+                p95:           agg.p95(),
+                p99:           agg.p99(),
+                p999:          agg.p999(),
+                endpoints:     crate::report::build_endpoint_rows(agg.results()),
+            };
+            println!("{}", crate::report::render(&data));
         }
     }
 
