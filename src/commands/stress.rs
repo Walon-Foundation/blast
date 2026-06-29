@@ -190,6 +190,33 @@ pub async fn run(
         }
     }
 
+    {
+        let mut agg = crate::stat::Stats::new();
+        for s in &step_results {
+            agg.absorb(s);
+        }
+        let abs_config = std::fs::canonicalize(config_path)
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|_| config_path.display().to_string());
+        let record = crate::history::HistoryRecord {
+            config_path:  abs_config.clone(),
+            timestamp:    std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
+            p50:          agg.p50(),
+            p95:          agg.p95(),
+            p99:          agg.p99(),
+            p999:         agg.p999(),
+            total:        agg.total(),
+            success_rate: agg.success_rate(),
+        };
+        if let Some(prev) = crate::history::load_last(&abs_config) {
+            crate::history::diff_print(&prev, &record);
+        }
+        let _ = crate::history::save(&record);
+    }
+
     if !assert_flags.is_empty() {
         let mut agg = crate::stat::Stats::new();
         for s in &step_results {
