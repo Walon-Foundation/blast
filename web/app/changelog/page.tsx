@@ -39,9 +39,31 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
-    version: "v0.2.0",
+    version: "v0.3.0",
     date: "June 2026",
     latest: true,
+    entries: [
+      { type: "feat", text: "blast trace <name> — print full request/response round-trip for any endpoint" },
+      { type: "feat", text: "blast stage — run multi-stage load profiles from a stages array in config" },
+      { type: "feat", text: "Scenario mode — group endpoints with scenario: \"name\" for ordered per-VU sequences" },
+      { type: "feat", text: "--ramp-up on blast run — linear warm-up phase excluded from final stats" },
+      { type: "feat", text: "--output json — machine-readable results from blast run and blast stress" },
+      { type: "feat", text: "--output html — generates an HTML report and opens it in the browser automatically" },
+      { type: "feat", text: "--assert p99<200ms — CI performance gate on blast run and blast stress" },
+      { type: "feat", text: "--vars file.json — inject a flat JSON variable file into all template contexts" },
+      { type: "feat", text: "assert field on endpoints — body assertions evaluated by blast check" },
+      { type: "feat", text: "Auto-save run results to ~/.blast/history/ and diff vs previous run on next run" },
+      { type: "feat", text: "Cookie jar enabled on all commands — Set-Cookie headers persist across requests" },
+      { type: "fix",  text: "p999 percentile now correct — was dividing by 100 instead of 1000" },
+      { type: "fix",  text: "Global config.headers now merged in blast run, stress, and seed (was only in check)" },
+      { type: "fix",  text: "blast run / blast stress: rps=0 and rps>1000 no longer panic" },
+      { type: "fix",  text: "blast mock: {id} path params correctly converted to axum :id routes" },
+      { type: "fix",  text: "blast mock: {{fake.*}} values now resolved per-request, not at startup" },
+    ],
+  },
+  {
+    version: "v0.2.0",
+    date: "June 2026",
     entries: [
       { type: "fix",  text: "Fix blast mock — missing imports, handler wiring, and TcpListener type" },
       { type: "fix",  text: "Fix docs page TypeScript error — C component children type too narrow" },
