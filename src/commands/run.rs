@@ -8,7 +8,7 @@ use std::{
 };
 use tokio::{sync::Mutex, task::JoinHandle};
 
-pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>, assert_flags: Vec<String>) -> Result<()> {
+pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>, assert_flags: Vec<String>, output: crate::OutputFormat) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
@@ -93,7 +93,9 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
             let elapsed_secs = elapsed.as_secs();
             if elapsed_secs > last_print {
                 last_print = elapsed_secs;
-                stats.lock().await.print_progress(elapsed_secs);
+                if matches!(output, crate::OutputFormat::Terminal) {
+                    stats.lock().await.print_progress(elapsed_secs);
+                }
             }
 
             let scenario = scenario_list[current_idx % scenario_count].clone();
@@ -125,19 +127,28 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
         }
 
         let stats_guard = stats.lock().await;
-        stats_guard.print_summary(duration);
+        match output {
+            crate::OutputFormat::Terminal => stats_guard.print_summary(duration),
+            crate::OutputFormat::Json => {
+                println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
+            }
+        }
         if !assert_flags.is_empty() {
             let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
                 .map(|s| crate::assertion::parse(s))
                 .collect::<anyhow::Result<Vec<_>>>()?;
             let results = stats_guard.evaluate(&assertions);
             let failed: Vec<_> = results.iter().filter(|r| !r.passed).collect();
-            println!();
+            if matches!(output, crate::OutputFormat::Terminal) {
+                println!();
+            }
             if failed.is_empty() {
-                println!("  all assertions passed");
+                if matches!(output, crate::OutputFormat::Terminal) {
+                    println!("  all assertions passed");
+                }
             } else {
                 for r in &failed {
-                    println!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+                    eprintln!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
                 }
                 anyhow::bail!("{} assertion(s) failed", failed.len());
             }
@@ -207,7 +218,9 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
             let elapsed_secs = elapsed.as_secs();
             if elapsed_secs > last_print {
                 last_print = elapsed_secs;
-                stats.lock().await.print_progress(elapsed_secs);
+                if matches!(output, crate::OutputFormat::Terminal) {
+                    stats.lock().await.print_progress(elapsed_secs);
+                }
             }
 
             let endpoint = endpoints[current_idx % endpoints.len()].clone();
@@ -231,19 +244,28 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
         }
 
         let stats_guard = stats.lock().await;
-        stats_guard.print_summary(duration);
+        match output {
+            crate::OutputFormat::Terminal => stats_guard.print_summary(duration),
+            crate::OutputFormat::Json => {
+                println!("{}", serde_json::to_string_pretty(&stats_guard.to_json(duration))?);
+            }
+        }
         if !assert_flags.is_empty() {
             let assertions: Vec<crate::assertion::Assertion> = assert_flags.iter()
                 .map(|s| crate::assertion::parse(s))
                 .collect::<anyhow::Result<Vec<_>>>()?;
             let results = stats_guard.evaluate(&assertions);
             let failed: Vec<_> = results.iter().filter(|r| !r.passed).collect();
-            println!();
+            if matches!(output, crate::OutputFormat::Terminal) {
+                println!();
+            }
             if failed.is_empty() {
-                println!("  all assertions passed");
+                if matches!(output, crate::OutputFormat::Terminal) {
+                    println!("  all assertions passed");
+                }
             } else {
                 for r in &failed {
-                    println!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
+                    eprintln!("  ✗  {} {} {:.1} — actual: {:.1}", r.assertion.metric, r.assertion.op, r.assertion.value, r.actual);
                 }
                 anyhow::bail!("{} assertion(s) failed", failed.len());
             }
