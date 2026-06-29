@@ -13,6 +13,7 @@ pub async fn run(config_path: &Path) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let client = Client::builder()
         .timeout(std::time::Duration::from_secs(10))
+        .cookie_store(true)
         .build()?;
 
     let mut ctx: HashMap<String, String> = HashMap::new();

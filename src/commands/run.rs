@@ -17,7 +17,7 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64) -> Result<()> {
         return Ok(());
     };
 
-    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).build()?);
+    let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
 
     let ctx = config.load_setup(&client).await?;
     let base_url = Arc::new(config.base_url.clone());
