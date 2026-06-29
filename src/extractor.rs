@@ -35,7 +35,7 @@ pub fn extract(body: &Value, extract_rule: &HashMap<String, String>, ctx: &mut C
     }
 }
 
-fn get_path<'a>(value: &'a Value, path: &'a str) -> Option<&'a Value> {
+pub fn get_path<'a>(value: &'a Value, path: &'a str) -> Option<&'a Value> {
     let mut current = value;
 
     for segment in path.split('.') {
