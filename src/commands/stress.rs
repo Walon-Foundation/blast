@@ -16,6 +16,10 @@ pub async fn run(
     step: u64,
     step_duration: u64,
 ) -> Result<()> {
+    if min_rps == 0 {
+        anyhow::bail!("rps must be at least 1");
+    }
+
     let config = BlastConfig::load(config_path)?;
     let endpoints = config.endpoint_for("stress");
     if endpoints.is_empty() {
@@ -36,7 +40,7 @@ pub async fn run(
     while current_rps <= max_rps {
         println!("\n -> step {current_rps} req/s for {}s", step_dur.as_secs());
 
-        let interval_ms = 1000 / current_rps;
+        let interval_ms = (1000u64 / current_rps).max(1);
         let start_time = Instant::now();
         let mut current_idx = 0;
 
