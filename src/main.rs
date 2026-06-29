@@ -18,7 +18,7 @@ pub enum OutputFormat {
     Terminal,
     /// JSON object written to stdout
     Json,
-    /// Self-contained HTML report written to stdout
+    /// Generate an HTML report and open it in the default browser
     Html,
 }
 

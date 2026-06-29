@@ -130,6 +130,32 @@ pub fn render(data: &ReportData) -> String {
         .replace("{{p50}}",           &data.p50.to_string())
 }
 
+/// Bind a local HTTP server on a random free port, open the browser, and serve
+/// the HTML report until the process is interrupted (Ctrl+C).
+pub async fn serve(html: String) -> anyhow::Result<()> {
+    use axum::{Router, routing::get, response::Html};
+    use std::net::TcpListener as StdListener;
+
+    let std_listener = StdListener::bind("127.0.0.1:0")?;
+    let port = std_listener.local_addr()?.port();
+    std_listener.set_nonblocking(true)?;
+    let listener = tokio::net::TcpListener::from_std(std_listener)?;
+
+    let url = format!("http://localhost:{}", port);
+    eprintln!("  report open at {} — Ctrl+C to exit", url);
+
+    // open browser — best-effort, don't fail if unavailable
+    let _ = open::that(&url);
+
+    let app = Router::new().route("/", get(move || {
+        let h = html.clone();
+        async move { Html(h) }
+    }));
+
+    axum::serve(listener, app).await?;
+    Ok(())
+}
+
 /// Expand a `{{#each NAME}}...{{/each}}` block for a slice of EndpointRows.
 fn expand_each(template: &str, name: &str, rows: &[EndpointRow]) -> String {
     let open_tag  = format!("{{{{#each {}}}}}", name);

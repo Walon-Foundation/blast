@@ -154,7 +154,7 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
                     p999:          stats_guard.p999(),
                     endpoints:     crate::report::build_endpoint_rows(stats_guard.results()),
                 };
-                println!("{}", crate::report::render(&data));
+                crate::report::serve(crate::report::render(&data)).await?;
             }
         }
 
@@ -317,7 +317,7 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
                     p999:          stats_guard.p999(),
                     endpoints:     crate::report::build_endpoint_rows(stats_guard.results()),
                 };
-                println!("{}", crate::report::render(&data));
+                crate::report::serve(crate::report::render(&data)).await?;
             }
         }
 
