@@ -10,12 +10,6 @@ use tokio::{sync::Mutex, task::JoinHandle};
 
 pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars: Option<&std::path::Path>) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
-    let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
-
-    if endpoints.is_empty() {
-        println!("No endpoint to run");
-        return Ok(());
-    };
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).cookie_store(true).build()?);
 
@@ -27,91 +21,200 @@ pub async fn run(config_path: &Path, rps: u32, duration: u64, ramp_up: u64, vars
         }
     }
     let base_url = Arc::new(config.base_url.clone());
-    let endpoints = Arc::new(endpoints);
 
-    if rps == 0 {
-        anyhow::bail!("rps must be at least 1");
-    }
+    let scenarios = config.scenarios();
 
-    if ramp_up > 0 {
-        println!("  ramping up — {}s", ramp_up);
-        let ramp_end = Instant::now() + Duration::from_secs(ramp_up);
-        let mut ramp_idx: usize = 0;
-        let mut ramp_handles = Vec::new();
+    if !scenarios.is_empty() {
+        // Scenario mode: each spawned task runs one full scenario sequence in order,
+        // with a local extraction context so extracted values flow between steps.
+        let scenario_list: Vec<Vec<crate::config::Endpoint>> = scenarios.into_values().collect();
+        let scenario_count = scenario_list.len();
+        let scenario_list = Arc::new(scenario_list);
 
-        while Instant::now() < ramp_end {
-            let elapsed_secs = ramp_up.saturating_sub(
-                ramp_end.saturating_duration_since(Instant::now()).as_secs()
-            );
-            let fraction = (elapsed_secs as f64 / ramp_up as f64).min(1.0);
-            let current_rps = ((fraction * rps as f64).max(1.0)) as u64;
-            let interval_ms = (1000u64 / current_rps).max(1);
+        if rps == 0 {
+            anyhow::bail!("rps must be at least 1");
+        }
 
-            let client_c = Arc::clone(&client);
-            let ep = endpoints[ramp_idx % endpoints.len()].clone();
-            let base = Arc::clone(&base_url);
+        if ramp_up > 0 {
+            println!("  ramping up — {}s", ramp_up);
+            let ramp_end = Instant::now() + Duration::from_secs(ramp_up);
+            let mut ramp_idx: usize = 0;
+            let mut ramp_handles = Vec::new();
+
+            while Instant::now() < ramp_end {
+                let elapsed_secs = ramp_up.saturating_sub(
+                    ramp_end.saturating_duration_since(Instant::now()).as_secs()
+                );
+                let fraction = (elapsed_secs as f64 / ramp_up as f64).min(1.0);
+                let current_rps = ((fraction * rps as f64).max(1.0)) as u64;
+                let interval_ms = (1000u64 / current_rps).max(1);
+
+                let client_c = Arc::clone(&client);
+                let scenario = scenario_list[ramp_idx % scenario_count].clone();
+                let base = Arc::clone(&base_url);
+                let ctx_snap = ctx.clone();
+                ramp_handles.push(tokio::spawn(async move {
+                    let mut local_ctx = ctx_snap;
+                    for ep in &scenario {
+                        let result = runner::execute(&client_c, ep, &base, &local_ctx).await;
+                        if result.passed {
+                            if let (Some(rules), Some(body)) = (&ep.extract, &result.body) {
+                                crate::extractor::extract(body, rules, &mut local_ctx);
+                            }
+                        }
+                    }
+                }));
+                ramp_idx = ramp_idx.wrapping_add(1);
+
+                tokio::time::sleep(Duration::from_millis(interval_ms)).await;
+            }
+
+            for h in ramp_handles { let _ = h.await; }
+            println!("  ramp-up complete — measuring at {} req/s", rps);
+        }
+
+        let duration = Duration::from_secs(duration);
+        let interval_ms = (1000u32 / rps).max(1);
+        let start_time = Instant::now();
+        let mut current_idx = 0;
+        let mut last_print = 0u64;
+        let mut handles: Vec<JoinHandle<()>> = Vec::new();
+        let mut ticker = tokio::time::interval(Duration::from_millis(interval_ms.into()));
+        let stats = Arc::new(Mutex::new(Stats::new()));
+
+        loop {
+            ticker.tick().await;
+
+            let elapsed = start_time.elapsed();
+            if elapsed >= duration {
+                break;
+            }
+
+            let elapsed_secs = elapsed.as_secs();
+            if elapsed_secs > last_print {
+                last_print = elapsed_secs;
+                stats.lock().await.print_progress(elapsed_secs);
+            }
+
+            let scenario = scenario_list[current_idx % scenario_count].clone();
+            current_idx += 1;
+
+            let client = Arc::clone(&client);
+            let base_url = Arc::clone(&base_url);
             let ctx_snap = ctx.clone();
-            ramp_handles.push(tokio::spawn(async move {
-                let _ = runner::execute(&client_c, &ep, &base, &ctx_snap).await;
-            }));
-            ramp_idx = ramp_idx.wrapping_add(1);
+            let stats = Arc::clone(&stats);
 
-            tokio::time::sleep(Duration::from_millis(interval_ms)).await;
+            let handle = tokio::spawn(async move {
+                let mut local_ctx = ctx_snap;
+                for ep in &scenario {
+                    let result = runner::execute(&client, ep, &base_url, &local_ctx).await;
+                    if result.passed {
+                        if let (Some(rules), Some(body)) = (&ep.extract, &result.body) {
+                            crate::extractor::extract(body, rules, &mut local_ctx);
+                        }
+                    }
+                    stats.lock().await.record(result);
+                }
+            });
+
+            handles.push(handle);
         }
 
-        for h in ramp_handles { let _ = h.await; }
-        println!("  ramp-up complete — measuring at {} req/s", rps);
-    }
-
-    //timeout stuff
-    let duration = Duration::from_secs(duration);
-    let interval_ms = (1000u32 / rps).max(1);
-    let start_time = Instant::now();
-    let mut current_idx = 0;
-    let mut last_print = 0u64;
-
-    // let results = Arc::new(Mutex::new(Vec::<runner::RequestResult>::new()));
-    let mut handles: Vec<JoinHandle<()>> = Vec::new();
-
-    let mut ticker = tokio::time::interval(Duration::from_millis(interval_ms.into()));
-    let stats = Arc::new(Mutex::new(Stats::new()));
-
-    loop {
-        ticker.tick().await;
-
-        let elapsed = start_time.elapsed();
-        if elapsed >= duration {
-            break;
+        for handle in handles {
+            handle.await?;
         }
 
-        let elapsed_secs = elapsed.as_secs();
-        if elapsed_secs > last_print {
-            last_print = elapsed_secs;
-            stats.lock().await.print_progress(elapsed_secs);
+        stats.lock().await.print_summary(duration);
+    } else {
+        // Existing round-robin path — no change
+        let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("run"));
+
+        if endpoints.is_empty() {
+            println!("No endpoint to run");
+            return Ok(());
+        };
+
+        let endpoints = Arc::new(endpoints);
+
+        if rps == 0 {
+            anyhow::bail!("rps must be at least 1");
         }
 
-        let endpoint = endpoints[current_idx % endpoints.len()].clone();
-        current_idx += 1;
+        if ramp_up > 0 {
+            println!("  ramping up — {}s", ramp_up);
+            let ramp_end = Instant::now() + Duration::from_secs(ramp_up);
+            let mut ramp_idx: usize = 0;
+            let mut ramp_handles = Vec::new();
 
-        let client = Arc::clone(&client);
-        let base_url = Arc::clone(&base_url);
-        let ctx = ctx.clone();
-        // let results = Arc::clone(&results);
-        let stats = Arc::clone(&stats);
+            while Instant::now() < ramp_end {
+                let elapsed_secs = ramp_up.saturating_sub(
+                    ramp_end.saturating_duration_since(Instant::now()).as_secs()
+                );
+                let fraction = (elapsed_secs as f64 / ramp_up as f64).min(1.0);
+                let current_rps = ((fraction * rps as f64).max(1.0)) as u64;
+                let interval_ms = (1000u64 / current_rps).max(1);
 
-        let handle = tokio::spawn(async move {
-            let result = runner::execute(&client, &endpoint, &base_url, &ctx).await;
-            stats.lock().await.record(result);
-        });
+                let client_c = Arc::clone(&client);
+                let ep = endpoints[ramp_idx % endpoints.len()].clone();
+                let base = Arc::clone(&base_url);
+                let ctx_snap = ctx.clone();
+                ramp_handles.push(tokio::spawn(async move {
+                    let _ = runner::execute(&client_c, &ep, &base, &ctx_snap).await;
+                }));
+                ramp_idx = ramp_idx.wrapping_add(1);
 
-        handles.push(handle);
+                tokio::time::sleep(Duration::from_millis(interval_ms)).await;
+            }
+
+            for h in ramp_handles { let _ = h.await; }
+            println!("  ramp-up complete — measuring at {} req/s", rps);
+        }
+
+        let duration = Duration::from_secs(duration);
+        let interval_ms = (1000u32 / rps).max(1);
+        let start_time = Instant::now();
+        let mut current_idx = 0;
+        let mut last_print = 0u64;
+        let mut handles: Vec<JoinHandle<()>> = Vec::new();
+        let mut ticker = tokio::time::interval(Duration::from_millis(interval_ms.into()));
+        let stats = Arc::new(Mutex::new(Stats::new()));
+
+        loop {
+            ticker.tick().await;
+
+            let elapsed = start_time.elapsed();
+            if elapsed >= duration {
+                break;
+            }
+
+            let elapsed_secs = elapsed.as_secs();
+            if elapsed_secs > last_print {
+                last_print = elapsed_secs;
+                stats.lock().await.print_progress(elapsed_secs);
+            }
+
+            let endpoint = endpoints[current_idx % endpoints.len()].clone();
+            current_idx += 1;
+
+            let client = Arc::clone(&client);
+            let base_url = Arc::clone(&base_url);
+            let ctx = ctx.clone();
+            let stats = Arc::clone(&stats);
+
+            let handle = tokio::spawn(async move {
+                let result = runner::execute(&client, &endpoint, &base_url, &ctx).await;
+                stats.lock().await.record(result);
+            });
+
+            handles.push(handle);
+        }
+
+        for handle in handles {
+            handle.await?;
+        }
+
+        stats.lock().await.print_summary(duration);
     }
-
-    for handle in handles {
-        handle.await?;
-    }
-
-    stats.lock().await.print_summary(duration);
 
     Ok(())
 }
