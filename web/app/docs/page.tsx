@@ -170,12 +170,19 @@ export default function DocsPage() {
               { label: "run",         href: "#cmd-run" },
               { label: "stress",      href: "#cmd-stress" },
               { label: "mock",        href: "#cmd-mock" },
+              { label: "trace",       href: "#cmd-trace" },
+              { label: "stage",       href: "#cmd-stage" },
               { label: "Config",      href: "#configuration" },
               { label: "Fields",      href: "#extensions" },
               { label: "Fake data",   href: "#fake-data" },
               { label: "Tags",        href: "#tags" },
+              { label: "Stages",      href: "#stages" },
               { label: "Setup",       href: "#setup" },
               { label: "Chaining",    href: "#chaining" },
+              { label: "Scenarios",   href: "#scenarios" },
+              { label: "Vars",        href: "#vars" },
+              { label: "Assertions",  href: "#assertions" },
+              { label: "History",     href: "#history" },
             ].map((l) => (
               <a
                 key={l.href}
@@ -292,17 +299,24 @@ blast init ./my-api`}</Pre>
           <SubSection id="cmd-run" title="blast run" mono>
             <P>
               Fixed-RPS load test. Uses a tokio interval ticker to maintain the target request rate.
-              Round-robins over endpoints tagged <C>"run"</C>. Prints live per-second progress. Prints
-              a final summary with p50, p95, p99, and p999 latency percentiles.
+              Round-robins over endpoints tagged <C>"run"</C>. Prints live per-second progress and a
+              final summary with p50, p95, p99, and p999 latency percentiles.
             </P>
             <Table
               cols={["Flag", "Default", "Description"]}
               rows={[
                 ["--rps", "10", "Target requests per second"],
                 ["-d, --duration", "30", "Test duration in seconds"],
+                ["--ramp-up", "0", "Seconds to ramp from 0 to target RPS before measuring (0 = disabled)"],
+                ["--output", "terminal", "Output format: terminal, json, or html"],
+                ["--assert", "—", 'Assertion like "p99<200ms" or "error-rate<1%" — exits non-zero on failure'],
               ]}
             />
-            <Pre lang="bash">{`blast run --rps 100 --duration 120`}</Pre>
+            <Pre lang="bash">{`blast run --rps 100 --duration 120
+blast run --rps 50 --ramp-up 30 --duration 60
+blast run --output json
+blast run --output html
+blast run --rps 200 --assert "p99<300ms" --assert "error-rate<1%"`}</Pre>
           </SubSection>
 
           <SubSection id="cmd-stress" title="blast stress" mono>
@@ -319,9 +333,13 @@ blast init ./my-api`}</Pre>
                 ["--max-rps", "100", "Maximum RPS to reach"],
                 ["--step", "10", "RPS increase per step"],
                 ["--step-duration", "15", "Seconds to hold each step"],
+                ["--output", "terminal", "Output format: terminal or json"],
+                ["--assert", "—", 'Assertion like "p99<500ms" — exits non-zero on failure'],
               ]}
             />
-            <Pre lang="bash">{`blast stress --min-rps 10 --max-rps 500 --step 50 --step-duration 20`}</Pre>
+            <Pre lang="bash">{`blast stress --min-rps 10 --max-rps 500 --step 50 --step-duration 20
+blast stress --output json
+blast stress --assert "p99<500ms"`}</Pre>
           </SubSection>
 
           <SubSection id="cmd-mock" title="blast mock" mono>
@@ -359,6 +377,47 @@ blast mock --config ./api/blast.config.json`}</Pre>
 
   5 routes mounted
   Listening on http://localhost:4000`}</Pre>
+          </SubSection>
+
+          <SubSection id="cmd-trace" title="blast trace &lt;name&gt;" mono>
+            <P>
+              Runs a single named endpoint and prints the complete request/response round-trip:
+              resolved URL, method, headers sent, request body, response status, response headers,
+              response body, and latency. Setup endpoints run first so extracted values are available.
+            </P>
+            <P>
+              Useful for debugging request/response mismatches without leaving the tool — no curl
+              flags to remember.
+            </P>
+            <Pre lang="bash">{`blast trace "login"
+blast trace "get user"`}</Pre>
+            <Pre lang="bash">{`$ blast trace "login"
+
+── request ─────────────────────────────────────
+POST http://localhost:3000/api/v1/auth/login
+  Content-Type: application/json
+{ "email": "admin@example.com", "password": "Admin1234!" }
+
+── response (200 ✓ — 14ms) ──────────────────────
+  content-type: application/json
+{ "data": { "access_token": "eyJ..." } }`}</Pre>
+          </SubSection>
+
+          <SubSection id="cmd-stage" title="blast stage" mono>
+            <P>
+              Runs a multi-stage load profile defined in the <C>stages</C> array of{" "}
+              <C>blast.config.json</C>. Each stage specifies a target RPS and duration. Set{" "}
+              <C>rps: 0</C> for a cooldown (sleep) stage. Per-stage stats are printed after each step.
+            </P>
+            <Pre lang="bash">{`blast stage`}</Pre>
+            <Pre lang="json">{`{
+  "stages": [
+    { "rps": 10,  "duration": 30  },
+    { "rps": 50,  "duration": 60  },
+    { "rps": 100, "duration": 120 },
+    { "rps": 0,   "duration": 30  }
+  ]
+}`}</Pre>
           </SubSection>
 
         </Section>
@@ -431,9 +490,37 @@ blast mock --config ./api/blast.config.json`}</Pre>
               ["body", "object", "Request body (JSON). Supports {{fake.*}} placeholders."],
               ["expect_status", "integer", "Expected HTTP status code; counted as failure if response differs"],
               ["extract", "object", "Map of variable name → dot-path to extract from response JSON"],
+              ["assert", "object", 'Body assertions evaluated by blast check: { "data.count": ">0" }'],
               ["weight", "integer", "Relative traffic weight for load distribution (default: 1)"],
+              ["scenario", "string", 'Groups this endpoint into a named scenario sequence (e.g. "auth-flow")'],
               ["tags", "array", 'Commands that pick up this endpoint: "seed", "run", "stress"'],
               ["mock_response", "object", "Body returned by blast mock for this route"],
+            ]}
+          />
+        </Section>
+
+        {/* Stages */}
+        <Section id="stages" title="Stages">
+          <P>
+            The top-level <C>stages</C> array defines a multi-stage load profile for{" "}
+            <C>blast stage</C>. Each entry sets a target RPS and duration. A stage with{" "}
+            <C>rps: 0</C> is a cooldown — blast sleeps for the duration and fires no requests.
+          </P>
+          <Pre lang="json">{`{
+  "base_url": "http://localhost:3000",
+  "stages": [
+    { "rps": 10,  "duration": 30  },
+    { "rps": 50,  "duration": 60  },
+    { "rps": 100, "duration": 120 },
+    { "rps": 0,   "duration": 30  }
+  ],
+  "endpoints": [...]
+}`}</Pre>
+          <Table
+            cols={["Field", "Type", "Description"]}
+            rows={[
+              ["rps", "integer", "Target requests per second for this stage (0 = cooldown/sleep)"],
+              ["duration", "integer", "How long to hold this stage in seconds"],
             ]}
           />
         </Section>
@@ -549,6 +636,96 @@ blast mock --config ./api/blast.config.json`}</Pre>
             Values extracted during setup are available to all subsequent endpoints.
             Values extracted during load operations are available to later endpoints in the
             same request round.
+          </P>
+        </Section>
+
+        {/* Scenarios */}
+        <Section id="scenarios" title="Scenarios">
+          <P>
+            Adding <C>scenario: "name"</C> to endpoints groups them into ordered sequences.
+            When scenarios are present in the config, <C>blast run</C> executes one full
+            scenario sequence per iteration rather than round-robining individual endpoints.
+            Each sequence runs with its own local extraction context, so values extracted in
+            step 1 are available to step 2 — enabling realistic user journeys.
+          </P>
+          <Pre lang="json">{`{ "name": "register",       "method": "POST", "path": "/auth/register",
+  "scenario": "auth-flow",  "expect_status": 201,
+  "extract": { "user_id": "data.id" } },
+{ "name": "login",          "method": "POST", "path": "/auth/login",
+  "scenario": "auth-flow",  "expect_status": 200,
+  "extract": { "token": "data.access_token" } },
+{ "name": "fetch profile",  "method": "GET",  "path": "/users/{{user_id}}",
+  "scenario": "auth-flow",  "headers": { "Authorization": "Bearer {{token}}" },
+  "expect_status": 200 }`}</Pre>
+        </Section>
+
+        {/* Variable files */}
+        <Section id="vars" title="Variable files">
+          <P>
+            Pass <C>--vars path/to/vars.json</C> to any command to inject a flat JSON object
+            of variables into the template context. These have the lowest precedence — they
+            are overridden by values extracted from responses or set by environment variables.
+          </P>
+          <Pre lang="json">{`{
+  "base_user": "admin@example.com",
+  "org_id":    "acme-corp",
+  "tier":      "enterprise"
+}`}</Pre>
+          <Pre lang="bash">{`blast run --vars staging.json
+blast check --vars ./env/prod.json`}</Pre>
+          <P>
+            Only scalar values (strings, numbers, booleans) are accepted. Nested objects
+            and arrays produce a warning and are skipped.
+          </P>
+        </Section>
+
+        {/* Threshold assertions */}
+        <Section id="assertions" title="Threshold assertions">
+          <P>
+            Pass one or more <C>--assert</C> flags to <C>blast run</C> or <C>blast stress</C>{" "}
+            to enforce performance thresholds. blast evaluates assertions after the test and
+            exits non-zero if any fail — enabling performance gates in CI pipelines.
+          </P>
+          <Table
+            cols={["Metric", "Example", "Description"]}
+            rows={[
+              ["p50", "p50<100ms", "Median latency"],
+              ["p95", "p95<200ms", "95th percentile latency"],
+              ["p99", "p99<500ms", "99th percentile latency"],
+              ["p999", "p999<1000ms", "99.9th percentile latency"],
+              ["error-rate", "error-rate<1%", "Percentage of failed requests"],
+              ["success-rate", "success-rate>99%", "Percentage of successful requests"],
+            ]}
+          />
+          <Pre lang="bash">{`blast run --rps 100 --duration 60 \\
+  --assert "p99<200ms" \\
+  --assert "error-rate<1%"
+
+# exits 0 if all pass, non-zero with details if any fail`}</Pre>
+          <P>
+            Body assertions (per-endpoint) use the <C>assert</C> field and are evaluated
+            by <C>blast check</C>. See <a href="#extensions" className="text-[#fb923c] underline underline-offset-[3px]">Endpoint fields</a>.
+          </P>
+        </Section>
+
+        {/* History */}
+        <Section id="history" title="History">
+          <P>
+            After every <C>blast run</C> or <C>blast stress</C>, blast automatically saves the
+            result to <C>~/.blast/history/</C>. On the next run against the same config, it
+            prints a one-line comparison showing how p50, p95, p99, and p999 changed.
+          </P>
+          <Pre lang="bash">{`$ blast run --rps 100 --duration 60
+
+  ...
+
+  vs last run:
+    p50   42ms → 38ms  (-9%) ▼
+    p95   89ms → 91ms  (+2%) →
+    p99  142ms → 198ms (+39%) ▲`}</Pre>
+          <P>
+            No flags needed — history runs silently and never affects the exit code.
+            Records are keyed by the canonical config file path.
           </P>
         </Section>
 
