@@ -7,6 +7,7 @@ mod commands;
 mod config;
 mod extractor;
 mod history;
+mod report;
 mod runner;
 mod stat;
 mod template;
@@ -17,6 +18,8 @@ pub enum OutputFormat {
     Terminal,
     /// JSON object written to stdout
     Json,
+    /// Self-contained HTML report written to stdout
+    Html,
 }
 
 #[derive(Parser, Debug)]

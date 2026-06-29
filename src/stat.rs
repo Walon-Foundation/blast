@@ -19,6 +19,10 @@ impl Stats {
         self.results.push(result);
     }
 
+    pub fn results(&self) -> &[RequestResult] {
+        &self.results
+    }
+
     pub fn total(&self) -> usize {
         self.results.len()
     }
