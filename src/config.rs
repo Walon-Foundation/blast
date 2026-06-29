@@ -56,6 +56,7 @@ pub struct Endpoint {
     pub tags: Option<Vec<String>>,
     pub weight: Option<u32>,
     pub mock_response: Option<serde_json::Value>,
+    pub assert: Option<std::collections::HashMap<String, String>>,
 }
 
 pub const CONFIG_FILENAME: &str = "blast.config.json";
@@ -127,6 +128,7 @@ impl BlastConfig {
                 tags: Some(vec!["check".to_string(), "seed".to_string()]),
                 weight: None,
                 mock_response: None,
+                assert: None,
             }]),
             endpoints: vec![
                 Endpoint {
@@ -140,6 +142,7 @@ impl BlastConfig {
                     tags: Some(vec!["check".to_string(), "seed".to_string()]),
                     weight: None,
                     mock_response: None,
+                    assert: None,
                 },
                 Endpoint {
                     name: "register user".to_string(),
@@ -157,6 +160,7 @@ impl BlastConfig {
                     mock_response: Some(serde_json::json!({
                         "access_token":"helllll"
                     })),
+                    assert: None,
                 },
                 Endpoint {
                     name: "login".to_string(),
@@ -175,6 +179,7 @@ impl BlastConfig {
                     tags: Some(vec![String::from("check"), String::from("seed")]),
                     weight: None,
                     mock_response: None,
+                    assert: None,
                 },
             ],
         }
