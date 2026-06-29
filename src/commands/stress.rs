@@ -215,7 +215,7 @@ pub async fn run(
                 p999:          agg.p999(),
                 endpoints:     crate::report::build_endpoint_rows(agg.results()),
             };
-            println!("{}", crate::report::render(&data));
+            crate::report::serve(crate::report::render(&data)).await?;
         }
     }
 
