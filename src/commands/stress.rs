@@ -21,7 +21,7 @@ pub async fn run(
     }
 
     let config = BlastConfig::load(config_path)?;
-    let endpoints = config.endpoint_for("stress");
+    let endpoints = config.endpoints_with_headers("stress");
     if endpoints.is_empty() {
         println!("{}", "no endpoints tagged \"stress\" found".yellow());
         return Ok(());
@@ -29,7 +29,7 @@ pub async fn run(
 
     let client = Arc::new(Client::builder().timeout(Duration::from_secs(30)).build()?);
 
-    let endpoints = Arc::new(endpoints.into_iter().cloned().collect::<Vec<_>>());
+    let endpoints = Arc::new(endpoints);
 
     let ctx = config.load_setup(&client).await?;
     let base_url = Arc::new(config.base_url.clone());
