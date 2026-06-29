@@ -58,6 +58,10 @@ enum Command {
 
         #[arg(long, short = 'd', default_value = "30")]
         duration: u64,
+
+        /// Ramp from 0 to target RPS over this many seconds before measuring (0 = disabled)
+        #[arg(long, default_value = "0")]
+        ramp_up: u64,
     },
 
     /// Ramps from mins-rps to max-rps in steps, calls the blast run logic for each step
@@ -112,8 +116,8 @@ async fn main() -> Result<()> {
             commands::seed::run(&cli.config, count, concurrency, cli.vars.as_deref()).await?;
         }
 
-        Command::Run { rps, duration } => {
-            commands::run::run(&cli.config, rps, duration, cli.vars.as_deref()).await?;
+        Command::Run { rps, duration, ramp_up } => {
+            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref()).await?;
         }
 
         Command::Stress {
