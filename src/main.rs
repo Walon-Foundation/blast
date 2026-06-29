@@ -20,6 +20,10 @@ struct Cli {
     #[arg(short, long, global = true, default_value = ".")]
     config: PathBuf,
 
+    /// Path to a flat JSON file of variables to inject into templates
+    #[arg(long, global = true)]
+    vars: Option<std::path::PathBuf>,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -91,7 +95,7 @@ async fn main() -> Result<()> {
         }
 
         Command::Check => {
-            commands::check::run(&cli.config).await?;
+            commands::check::run(&cli.config, cli.vars.as_deref()).await?;
         }
 
         Command::Validate => {
@@ -99,11 +103,11 @@ async fn main() -> Result<()> {
         }
 
         Command::Seed { count, concurrency } => {
-            commands::seed::run(&cli.config, count, concurrency).await?;
+            commands::seed::run(&cli.config, count, concurrency, cli.vars.as_deref()).await?;
         }
 
         Command::Run { rps, duration } => {
-            commands::run::run(&cli.config, rps, duration).await?;
+            commands::run::run(&cli.config, rps, duration, cli.vars.as_deref()).await?;
         }
 
         Command::Stress {
@@ -112,7 +116,15 @@ async fn main() -> Result<()> {
             step,
             step_duration,
         } => {
-            commands::stress::run(&cli.config, min_rps, max_rps, step, step_duration).await?;
+            commands::stress::run(
+                &cli.config,
+                min_rps,
+                max_rps,
+                step,
+                step_duration,
+                cli.vars.as_deref(),
+            )
+            .await?;
         }
 
         Command::Mock { port, delay } => {
