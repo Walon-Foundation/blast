@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>blast report</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#0a0a0c;--surface:#111114;--border:#1e1e22;
+      --text:#f4f4f5;--muted:#71717a;--accent:#f97316
+    }
+    body{background:var(--bg);color:var(--text);font-family:ui-monospace,'Cascadia Code',monospace;font-size:14px;line-height:1.5;padding:2rem;max-width:960px;margin:0 auto}
+    h1{font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:.25rem}
+    .meta{color:var(--muted);font-size:.8rem;margin-bottom:2rem}
+    .meta span{color:var(--text)}
+    .section{margin-bottom:2.5rem}
+    .section-title{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:.375rem;padding:1rem}
+    .card-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+    .card-value{font-size:1.6rem;font-weight:700;color:var(--accent)}
+    .card-unit{font-size:.8rem;color:var(--muted);font-weight:400;margin-left:.15rem}
+    .chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:.375rem;padding:1.5rem}
+    svg text{font-family:ui-monospace,monospace}
+    table{width:100%;border-collapse:collapse;font-size:.875rem}
+    thead tr{border-bottom:1px solid var(--border)}
+    th{text-align:left;padding:.5rem .75rem;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+    td{padding:.5rem .75rem;border-bottom:1px solid var(--border)}
+    tr:last-child td{border-bottom:none}
+    .tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:.375rem;overflow:hidden}
+    .dim{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <h1>blast report</h1>
+  <div class="meta">
+    config: <span>{{config_path}}</span>
+    &nbsp;&middot;&nbsp; generated: <span>{{generated_at}}</span>
+    &nbsp;&middot;&nbsp; target: <span>{{target_rps}} req/s</span>
+    &nbsp;&middot;&nbsp; duration: <span>{{duration_secs}}s</span>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Summary</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-label">Total Requests</div>
+        <div class="card-value">{{total}}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Passed</div>
+        <div class="card-value">{{passed}}</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Success Rate</div>
+        <div class="card-value">{{success_rate}}<span class="card-unit">%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Latency Percentiles</div>
+    <div class="grid-4">
+      <div class="card">
+        <div class="card-label">p50</div>
+        <div class="card-value">{{p50}}<span class="card-unit">ms</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">p95</div>
+        <div class="card-value">{{p95}}<span class="card-unit">ms</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">p99</div>
+        <div class="card-value">{{p99}}<span class="card-unit">ms</span></div>
+      </div>
+      <div class="card">
+        <div class="card-label">p999</div>
+        <div class="card-value">{{p999}}<span class="card-unit">ms</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Latency Chart</div>
+    <div class="chart-wrap">
+      <svg viewBox="0 0 400 170" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:560px;display:block">
+        <rect x="10"  y="{{p50_y}}"  width="70" height="{{p50_h}}"  fill="#f97316" rx="3"/>
+        <rect x="110" y="{{p95_y}}"  width="70" height="{{p95_h}}"  fill="#f97316" rx="3" opacity="0.82"/>
+        <rect x="210" y="{{p99_y}}"  width="70" height="{{p99_h}}"  fill="#f97316" rx="3" opacity="0.64"/>
+        <rect x="310" y="{{p999_y}}" width="70" height="{{p999_h}}" fill="#f97316" rx="3" opacity="0.46"/>
+        <text x="45"  y="{{p50_label_y}}"  text-anchor="middle" fill="#f4f4f5" font-size="10">{{p50}}ms</text>
+        <text x="145" y="{{p95_label_y}}"  text-anchor="middle" fill="#f4f4f5" font-size="10">{{p95}}ms</text>
+        <text x="245" y="{{p99_label_y}}"  text-anchor="middle" fill="#f4f4f5" font-size="10">{{p99}}ms</text>
+        <text x="345" y="{{p999_label_y}}" text-anchor="middle" fill="#f4f4f5" font-size="10">{{p999}}ms</text>
+        <text x="45"  y="160" text-anchor="middle" fill="#71717a" font-size="11">p50</text>
+        <text x="145" y="160" text-anchor="middle" fill="#71717a" font-size="11">p95</text>
+        <text x="245" y="160" text-anchor="middle" fill="#71717a" font-size="11">p99</text>
+        <text x="345" y="160" text-anchor="middle" fill="#71717a" font-size="11">p999</text>
+        <line x1="0" y1="140" x2="400" y2="140" stroke="#1e1e22" stroke-width="1"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Per-Endpoint Breakdown</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Endpoint</th>
+            <th>Total</th>
+            <th>Passed</th>
+            <th>Success</th>
+            <th>p50</th>
+            <th>p99</th>
+          </tr>
+        </thead>
+        <tbody>
+{{#each endpoints}}
+          <tr>
+            <td>{{name}}</td>
+            <td>{{total}}</td>
+            <td>{{passed}}</td>
+            <td>{{success_rate}}%</td>
+            <td class="dim">{{p50}}ms</td>
+            <td class="dim">{{p99}}ms</td>
+          </tr>
+{{/each}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
