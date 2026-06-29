@@ -25,6 +25,7 @@ pub struct Endpoint {
     pub expect_status: Option<u16>,
     pub extract: Option<HashMap<String, String>>,
     pub tags: Option<Vec<String>>,
+    pub weight: Option<u32>,
     pub mock_response: Option<serde_json::Value>,
 }
 
@@ -95,6 +96,7 @@ impl BlastConfig {
                 expect_status: Some(200),
                 extract: None,
                 tags: Some(vec!["check".to_string(), "seed".to_string()]),
+                weight: None,
                 mock_response: None,
             }]),
             endpoints: vec![
@@ -107,6 +109,7 @@ impl BlastConfig {
                     expect_status: Some(200),
                     extract: None,
                     tags: Some(vec!["check".to_string(), "seed".to_string()]),
+                    weight: None,
                     mock_response: None,
                 },
                 Endpoint {
@@ -121,6 +124,7 @@ impl BlastConfig {
                     expect_status: Some(201),
                     extract: None,
                     tags: None,
+                    weight: None,
                     mock_response: Some(serde_json::json!({
                         "access_token":"helllll"
                     })),
@@ -140,6 +144,7 @@ impl BlastConfig {
                         "data.access_token".to_string(),
                     )])),
                     tags: Some(vec![String::from("check"), String::from("seed")]),
+                    weight: None,
                     mock_response: None,
                 },
             ],
@@ -243,4 +248,15 @@ impl BlastConfig {
             })
             .collect()
     }
+}
+
+pub fn expand_by_weight(endpoints: Vec<Endpoint>) -> Vec<Endpoint> {
+    let mut expanded = Vec::new();
+    for endpoint in endpoints {
+        let w = endpoint.weight.unwrap_or(1).max(1);
+        for _ in 0..w {
+            expanded.push(endpoint.clone());
+        }
+    }
+    expanded
 }
