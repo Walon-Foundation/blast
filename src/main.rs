@@ -118,6 +118,9 @@ enum Command {
         /// Endpoint name (must match the name field in blast.config.json)
         name: String,
     },
+
+    /// Run a multi-stage load profile defined in the stages field of blast.config.json
+    Stage,
 }
 
 #[tokio::main]
@@ -172,6 +175,10 @@ async fn main() -> Result<()> {
 
         Command::Trace { name } => {
             commands::trace::run(&cli.config, &name).await?;
+        }
+
+        Command::Stage => {
+            commands::stage::run(&cli.config).await?;
         }
     }
 

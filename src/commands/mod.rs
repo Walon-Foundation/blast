@@ -3,6 +3,7 @@ pub mod init;
 pub mod mock;
 pub mod run;
 pub mod seed;
+pub mod stage;
 pub mod stress;
 pub mod trace;
 pub mod validate;

@@ -37,11 +37,18 @@ pub fn load_vars(path: &Path) -> Result<HashMap<String, String>> {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Stage {
+    pub rps:      u64,
+    pub duration: u64,  // seconds
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct BlastConfig {
     pub base_url: String,
     pub headers: Option<HashMap<String, String>>,
     pub endpoints: Vec<Endpoint>,
     pub setup: Option<Vec<Endpoint>>,
+    pub stages: Option<Vec<Stage>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -118,6 +125,7 @@ impl BlastConfig {
                 String::from("Content-Type"),
                 String::from("application/json"),
             )])),
+            stages: None,
             setup: Some(vec![Endpoint {
                 name: "health check".to_string(),
                 method: "GET".to_string(),
