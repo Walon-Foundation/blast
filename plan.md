@@ -995,7 +995,7 @@ The ramp between stages works by computing the interval_ms at the start of each 
 
 1. **stat.rs** first — self-contained, no new dependencies, immediately cleans up duplication. Good warmup.
 
-2. **Cookie jar** — one-line change to each Client builder, trivial and unblocks teams who need it.
+2. ~~**Cookie jar**~~ ✓ done — `.cookie_store(true)` added to all Client builders; `cookies` feature enabled in Cargo.toml.
 
 3. **`{{env.VAR}}`** — one function in template.rs, no deps.
 
