@@ -27,7 +27,7 @@ pub fn resolve(value: &Value, ctx: &Context) -> Value {
     }
 }
 
-fn resolve_str(s: &str, ctx: &Context) -> String {
+pub fn resolve_str(s: &str, ctx: &Context) -> String {
     if s.starts_with("{{") && s.ends_with("}}") {
         let key = s[2..s.len() - 2].trim();
         resolve_key(key, ctx)

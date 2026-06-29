@@ -20,6 +20,104 @@ pub struct RequestResult {
     pub body: Option<Value>,
 }
 
+#[derive(Debug)]
+pub struct RequestDetail {
+    pub url:              String,
+    pub method:           String,
+    pub request_headers:  std::collections::HashMap<String, String>,
+    pub request_body:     Option<serde_json::Value>,
+    pub response_status:  u16,
+    pub response_headers: std::collections::HashMap<String, String>,
+    pub response_body:    Option<serde_json::Value>,
+    pub latency_ms:       u128,
+    pub passed:           bool,
+}
+
+pub async fn execute_traced(
+    client: &Client,
+    endpoint: &Endpoint,
+    base_url: &str,
+    ctx: &HashMap<String, String>,
+) -> RequestDetail {
+    let url = format!("{}{}", base_url.trim_end_matches('/'), endpoint.path);
+    let url = template::resolve_str(&url, ctx);
+
+    let method = endpoint.method.to_uppercase();
+
+    let mut merged_headers = HashMap::new();
+    if let Some(ep_headers) = &endpoint.headers {
+        let resolved = template::resolve_map(ep_headers, ctx);
+        merged_headers.extend(resolved);
+    }
+
+    let body_val = endpoint.body.as_ref().map(|b| template::resolve(b, ctx));
+
+    let start = Instant::now();
+
+    let req_method = match method.as_str() {
+        "GET"    => reqwest::Method::GET,
+        "POST"   => reqwest::Method::POST,
+        "PUT"    => reqwest::Method::PUT,
+        "PATCH"  => reqwest::Method::PATCH,
+        "DELETE" => reqwest::Method::DELETE,
+        _        => reqwest::Method::GET,
+    };
+
+    let mut req = client.request(req_method, &url);
+
+    for (k, v) in &merged_headers {
+        req = req.header(k, v);
+    }
+    if let Some(body) = &body_val {
+        req = req.json(body);
+    }
+
+    let result = req.send().await;
+    let latency_ms = start.elapsed().as_millis();
+
+    match result {
+        Err(e) => RequestDetail {
+            url,
+            method,
+            request_headers: merged_headers,
+            request_body: body_val,
+            response_status: 0,
+            response_headers: Default::default(),
+            response_body: Some(serde_json::json!({"error": e.to_string()})),
+            latency_ms,
+            passed: false,
+        },
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            let expected = endpoint.expect_status.unwrap_or(200);
+            let passed = status == expected;
+
+            let mut resp_headers = HashMap::new();
+            for (k, v) in resp.headers() {
+                if let Ok(val) = v.to_str() {
+                    resp_headers.insert(k.to_string(), val.to_string());
+                }
+            }
+
+            let body_bytes = resp.text().await.unwrap_or_default();
+            let resp_body: Option<serde_json::Value> = serde_json::from_str(&body_bytes).ok()
+                .or_else(|| if body_bytes.is_empty() { None } else { Some(serde_json::json!(body_bytes)) });
+
+            RequestDetail {
+                url,
+                method,
+                request_headers: merged_headers,
+                request_body: body_val,
+                response_status: status,
+                response_headers: resp_headers,
+                response_body: resp_body,
+                latency_ms,
+                passed,
+            }
+        }
+    }
+}
+
 pub async fn execute(
     client: &Client,
     endpoint: &Endpoint,

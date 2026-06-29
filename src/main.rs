@@ -83,6 +83,12 @@ enum Command {
         #[arg(long, default_value = "0")]
         delay: u16,
     },
+
+    /// Print the full request and response for a single endpoint
+    Trace {
+        /// Endpoint name (must match the name field in blast.config.json)
+        name: String,
+    },
 }
 
 #[tokio::main]
@@ -129,6 +135,10 @@ async fn main() -> Result<()> {
 
         Command::Mock { port, delay } => {
             commands::mock::run(&cli.config, port, delay).await?;
+        }
+
+        Command::Trace { name } => {
+            commands::trace::run(&cli.config, &name).await?;
         }
     }
 
