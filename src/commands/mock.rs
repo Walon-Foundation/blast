@@ -1,7 +1,4 @@
-use crate::{
-    config::{BlastConfig, Endpoint},
-    template,
-};
+use crate::config::BlastConfig;
 use anyhow::Result;
 use axum::{
     Json,
@@ -9,6 +6,7 @@ use axum::{
     response::IntoResponse,
     routing::{delete, get, patch, post, put},
 };
+use regex::Regex;
 use reqwest::StatusCode;
 use std::{collections::HashMap, path::Path, sync::Arc, time::Duration};
 use tokio::net::TcpListener;
@@ -18,12 +16,12 @@ struct MockRoute {
     path: String,
     axum_path: String,
     status: u16,
-    response_body: serde_json::Value,
+    body_template: Option<serde_json::Value>,
 }
 
 struct HandlerState {
     status: u16,
-    body: serde_json::Value,
+    body_template: Option<serde_json::Value>,
     delay: u64,
 }
 
@@ -45,7 +43,7 @@ pub async fn run(config_path: &Path, port: u16, delay: u16) -> Result<()> {
     for route in routes.iter() {
         let state = Arc::new(HandlerState {
             status: route.status,
-            body: route.response_body.clone(),
+            body_template: route.body_template.clone(),
             delay: delay as u64,
         });
         let method_router = match route.method.as_str() {
@@ -70,9 +68,13 @@ async fn mock_handler(State(state): State<SharedState>) -> impl IntoResponse {
     if state.delay > 0 {
         tokio::time::sleep(Duration::from_millis(state.delay)).await;
     }
+    let body = match &state.body_template {
+        Some(tmpl) => crate::template::resolve(tmpl, &HashMap::new()),
+        None => serde_json::json!({"status": "ok"}),
+    };
     (
-        StatusCode::from_u16(state.status).unwrap(),
-        Json(state.body.clone()),
+        StatusCode::from_u16(state.status).unwrap_or(StatusCode::OK),
+        Json(body),
     )
 }
 
@@ -83,7 +85,7 @@ fn build_routes(config: &BlastConfig) -> Vec<MockRoute> {
             method: endpoint.method.clone(),
             path: endpoint.path.clone(),
             status: endpoint.expect_status.unwrap_or(200),
-            response_body: derive_response_body(&endpoint.clone()),
+            body_template: endpoint.mock_response.clone(),
             axum_path: convert_path(&endpoint.path),
         });
     }
@@ -92,12 +94,6 @@ fn build_routes(config: &BlastConfig) -> Vec<MockRoute> {
 }
 
 fn convert_path(path: &str) -> String {
-    path.replace("{paramName}", ":paramName").to_string()
-}
-
-fn derive_response_body(endpoint: &Endpoint) -> serde_json::Value {
-    match &endpoint.mock_response {
-        Some(body) => template::resolve(body, &HashMap::new()),
-        None => serde_json::json!({ "status": "ok"}),
-    }
+    let re = Regex::new(r"\{([^}]+)\}").unwrap();
+    re.replace_all(path, ":$1").into_owned()
 }
