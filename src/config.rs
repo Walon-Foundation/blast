@@ -57,6 +57,7 @@ pub struct Endpoint {
     pub weight: Option<u32>,
     pub mock_response: Option<serde_json::Value>,
     pub assert: Option<std::collections::HashMap<String, String>>,
+    pub scenario: Option<String>,
 }
 
 pub const CONFIG_FILENAME: &str = "blast.config.json";
@@ -129,6 +130,7 @@ impl BlastConfig {
                 weight: None,
                 mock_response: None,
                 assert: None,
+                scenario: None,
             }]),
             endpoints: vec![
                 Endpoint {
@@ -143,6 +145,7 @@ impl BlastConfig {
                     weight: None,
                     mock_response: None,
                     assert: None,
+                    scenario: None,
                 },
                 Endpoint {
                     name: "register user".to_string(),
@@ -161,6 +164,7 @@ impl BlastConfig {
                         "access_token":"helllll"
                     })),
                     assert: None,
+                    scenario: None,
                 },
                 Endpoint {
                     name: "login".to_string(),
@@ -180,6 +184,7 @@ impl BlastConfig {
                     weight: None,
                     mock_response: None,
                     assert: None,
+                    scenario: None,
                 },
             ],
         }
@@ -262,6 +267,16 @@ impl BlastConfig {
                     .unwrap_or(false)
             })
             .collect()
+    }
+
+    pub fn scenarios(&self) -> std::collections::HashMap<String, Vec<Endpoint>> {
+        let mut map: std::collections::HashMap<String, Vec<Endpoint>> = std::collections::HashMap::new();
+        for endpoint in &self.endpoints {
+            if let Some(name) = &endpoint.scenario {
+                map.entry(name.clone()).or_default().push(endpoint.clone());
+            }
+        }
+        map
     }
 
     /// Returns cloned endpoints for `tag` with global `config.headers` merged in.
