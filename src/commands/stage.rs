@@ -33,14 +33,20 @@ pub async fn run(config_path: &Path) -> Result<()> {
     let endpoints = Arc::new(endpoints);
 
     println!();
-    println!("  {:>5}   {:>8}   {:>8}   {:>6}   {:>6}   {:>6}   {:>6}", "Stage", "RPS", "Duration", "p50", "p95", "p99", "Errors");
+    println!(
+        "  {:>5}   {:>8}   {:>8}   {:>6}   {:>6}   {:>6}   {:>6}",
+        "Stage", "RPS", "Duration", "p50", "p95", "p99", "Errors"
+    );
     println!("  {}", "─".repeat(62));
 
     for (i, stage) in stages.iter().enumerate() {
         let stage_num = i + 1;
 
         if stage.rps == 0 {
-            println!("  {:>5}   {:>8}   {:>7}s   cooldown", stage_num, 0, stage.duration);
+            println!(
+                "  {:>5}   {:>8}   {:>7}s   cooldown",
+                stage_num, 0, stage.duration
+            );
             tokio::time::sleep(Duration::from_secs(stage.duration)).await;
             continue;
         }

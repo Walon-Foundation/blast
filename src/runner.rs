@@ -22,15 +22,15 @@ pub struct RequestResult {
 
 #[derive(Debug)]
 pub struct RequestDetail {
-    pub url:              String,
-    pub method:           String,
-    pub request_headers:  std::collections::HashMap<String, String>,
-    pub request_body:     Option<serde_json::Value>,
-    pub response_status:  u16,
+    pub url: String,
+    pub method: String,
+    pub request_headers: std::collections::HashMap<String, String>,
+    pub request_body: Option<serde_json::Value>,
+    pub response_status: u16,
     pub response_headers: std::collections::HashMap<String, String>,
-    pub response_body:    Option<serde_json::Value>,
-    pub latency_ms:       u128,
-    pub passed:           bool,
+    pub response_body: Option<serde_json::Value>,
+    pub latency_ms: u128,
+    pub passed: bool,
 }
 
 pub async fn execute_traced(
@@ -55,12 +55,12 @@ pub async fn execute_traced(
     let start = Instant::now();
 
     let req_method = match method.as_str() {
-        "GET"    => reqwest::Method::GET,
-        "POST"   => reqwest::Method::POST,
-        "PUT"    => reqwest::Method::PUT,
-        "PATCH"  => reqwest::Method::PATCH,
+        "GET" => reqwest::Method::GET,
+        "POST" => reqwest::Method::POST,
+        "PUT" => reqwest::Method::PUT,
+        "PATCH" => reqwest::Method::PATCH,
         "DELETE" => reqwest::Method::DELETE,
-        _        => reqwest::Method::GET,
+        _ => reqwest::Method::GET,
     };
 
     let mut req = client.request(req_method, &url);
@@ -100,8 +100,14 @@ pub async fn execute_traced(
             }
 
             let body_bytes = resp.text().await.unwrap_or_default();
-            let resp_body: Option<serde_json::Value> = serde_json::from_str(&body_bytes).ok()
-                .or_else(|| if body_bytes.is_empty() { None } else { Some(serde_json::json!(body_bytes)) });
+            let resp_body: Option<serde_json::Value> =
+                serde_json::from_str(&body_bytes).ok().or_else(|| {
+                    if body_bytes.is_empty() {
+                        None
+                    } else {
+                        Some(serde_json::json!(body_bytes))
+                    }
+                });
 
             RequestDetail {
                 url,

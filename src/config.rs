@@ -27,10 +27,7 @@ pub fn load_vars(path: &Path) -> Result<HashMap<String, String>> {
             serde_json::Value::Bool(b) => {
                 map.insert(key.clone(), b.to_string());
             }
-            _ => eprintln!(
-                "warning: --vars key \"{}\" is not a scalar — skipped",
-                key
-            ),
+            _ => eprintln!("warning: --vars key \"{}\" is not a scalar — skipped", key),
         }
     }
     Ok(map)
@@ -38,8 +35,8 @@ pub fn load_vars(path: &Path) -> Result<HashMap<String, String>> {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Stage {
-    pub rps:      u64,
-    pub duration: u64,  // seconds
+    pub rps: u64,
+    pub duration: u64, // seconds
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -278,7 +275,8 @@ impl BlastConfig {
     }
 
     pub fn scenarios(&self) -> std::collections::HashMap<String, Vec<Endpoint>> {
-        let mut map: std::collections::HashMap<String, Vec<Endpoint>> = std::collections::HashMap::new();
+        let mut map: std::collections::HashMap<String, Vec<Endpoint>> =
+            std::collections::HashMap::new();
         for endpoint in &self.endpoints {
             if let Some(name) = &endpoint.scenario {
                 map.entry(name.clone()).or_default().push(endpoint.clone());

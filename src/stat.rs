@@ -155,25 +155,35 @@ impl Stats {
         self.results.extend(other.results.iter().cloned());
     }
 
-    pub fn evaluate(&self, assertions: &[crate::assertion::Assertion]) -> Vec<crate::assertion::AssertionResult> {
-        use crate::assertion::{Metric, Op, AssertionResult};
-        assertions.iter().map(|a| {
-            let actual = match &a.metric {
-                Metric::P50         => self.p50()  as f64,
-                Metric::P95         => self.p95()  as f64,
-                Metric::P99         => self.p99()  as f64,
-                Metric::P999        => self.p999() as f64,
-                Metric::ErrorRate   => self.error_rate(),
-                Metric::SuccessRate => self.success_rate(),
-            };
-            let passed = match &a.op {
-                Op::Lt  => actual <  a.value,
-                Op::Lte => actual <= a.value,
-                Op::Gt  => actual >  a.value,
-                Op::Gte => actual >= a.value,
-            };
-            AssertionResult { assertion: a.clone(), actual, passed }
-        }).collect()
+    pub fn evaluate(
+        &self,
+        assertions: &[crate::assertion::Assertion],
+    ) -> Vec<crate::assertion::AssertionResult> {
+        use crate::assertion::{AssertionResult, Metric, Op};
+        assertions
+            .iter()
+            .map(|a| {
+                let actual = match &a.metric {
+                    Metric::P50 => self.p50() as f64,
+                    Metric::P95 => self.p95() as f64,
+                    Metric::P99 => self.p99() as f64,
+                    Metric::P999 => self.p999() as f64,
+                    Metric::ErrorRate => self.error_rate(),
+                    Metric::SuccessRate => self.success_rate(),
+                };
+                let passed = match &a.op {
+                    Op::Lt => actual < a.value,
+                    Op::Lte => actual <= a.value,
+                    Op::Gt => actual > a.value,
+                    Op::Gte => actual >= a.value,
+                };
+                AssertionResult {
+                    assertion: a.clone(),
+                    actual,
+                    passed,
+                }
+            })
+            .collect()
     }
 
     fn summary_percentiles(&self) -> (u128, u128, u128, u128) {

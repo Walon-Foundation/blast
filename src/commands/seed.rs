@@ -15,7 +15,12 @@ struct IterationResult {
     requests: usize,
 }
 
-pub async fn run(config_path: &Path, count: u32, concurrency: usize, vars: Option<&std::path::Path>) -> Result<()> {
+pub async fn run(
+    config_path: &Path,
+    count: u32,
+    concurrency: usize,
+    vars: Option<&std::path::Path>,
+) -> Result<()> {
     let config = BlastConfig::load(config_path)?;
     let endpoints = crate::config::expand_by_weight(config.endpoints_with_headers("seed"));
 
@@ -28,7 +33,12 @@ pub async fn run(config_path: &Path, count: u32, concurrency: usize, vars: Optio
         return Ok(());
     }
 
-    let client = Arc::new(Client::builder().timeout(Duration::from_secs(10)).cookie_store(true).build()?);
+    let client = Arc::new(
+        Client::builder()
+            .timeout(Duration::from_secs(10))
+            .cookie_store(true)
+            .build()?,
+    );
 
     let file_vars: Arc<HashMap<String, String>> = Arc::new(if let Some(vars_path) = vars {
         crate::config::load_vars(vars_path)?

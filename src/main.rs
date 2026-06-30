@@ -148,8 +148,23 @@ async fn main() -> Result<()> {
             commands::seed::run(&cli.config, count, concurrency, cli.vars.as_deref()).await?;
         }
 
-        Command::Run { rps, duration, ramp_up, assert_flags, output } => {
-            commands::run::run(&cli.config, rps, duration, ramp_up, cli.vars.as_deref(), assert_flags, output).await?;
+        Command::Run {
+            rps,
+            duration,
+            ramp_up,
+            assert_flags,
+            output,
+        } => {
+            commands::run::run(
+                &cli.config,
+                rps,
+                duration,
+                ramp_up,
+                cli.vars.as_deref(),
+                assert_flags,
+                output,
+            )
+            .await?;
         }
 
         Command::Stress {
