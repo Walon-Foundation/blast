@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 
@@ -119,11 +119,7 @@ const stagger: Variants = {
 /* ── Page ──────────────────────────────────────────── */
 
 export default function InstallPage() {
-  const [os, setOS] = useState<OS>("linux");
-
-  useEffect(() => {
-    setOS(detectOS());
-  }, []);
+  const [os] = useState<OS>(detectOS);
 
   const platformHighlight: Record<OS, Platform> = {
     linux: "linux-x64",

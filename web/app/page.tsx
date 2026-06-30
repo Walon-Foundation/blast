@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -135,14 +135,8 @@ function demoClassName(t: string): string {
 /* ── Page ──────────────────────────────────────────── */
 
 export default function Home() {
-  const [os, setOS] = useState<OS>("linux");
-  const [tab, setTab] = useState<OS>("linux");
-
-  useEffect(() => {
-    const detected = detectOS();
-    setOS(detected);
-    setTab(detected);
-  }, []);
+  const [os] = useState<OS>(detectOS);
+  const [tab, setTab] = useState<OS>(detectOS);
 
   const activeCmd = CMDS[tab];
 
@@ -187,7 +181,7 @@ export default function Home() {
               className="inline-flex items-center gap-1.5 text-xs font-medium text-accent bg-accent/8 border border-accent/18 rounded-full px-3 py-[0.2rem] mb-8 tracking-[0.01em]"
             >
               <span className="w-[5px] h-[5px] rounded-full bg-accent inline-block" />
-              v0.2.0 · stable
+              v0.3.0 · stable
             </motion.div>
 
             {/* Headline */}

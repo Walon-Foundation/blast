@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -11,15 +11,8 @@ const links = [
 ];
 
 export function Navbar() {
-  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted) {
-    return <header className="sticky top-0 z-50 h-14 border-b border-line bg-canvas/92 backdrop-blur-[16px]" />;
-  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-canvas/92 backdrop-blur-[16px]">

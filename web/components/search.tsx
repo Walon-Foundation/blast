@@ -10,24 +10,31 @@ interface SearchEntry {
 }
 
 const INDEX: SearchEntry[] = [
-  { title: "Overview",            href: "/docs#overview",       section: "Getting started", keywords: "what is blast introduction" },
-  { title: "Install",             href: "/docs#install",        section: "Getting started", keywords: "install download curl bash" },
-  { title: "Quick start",         href: "/docs#quickstart",     section: "Getting started", keywords: "quick start begin first run" },
-  { title: "blast init",          href: "/docs#cmd-init",       section: "Commands",        keywords: "init create config openapi.json" },
-  { title: "blast validate",      href: "/docs#cmd-validate",   section: "Commands",        keywords: "validate check config load" },
-  { title: "blast check",         href: "/docs#cmd-check",      section: "Commands",        keywords: "check test endpoints once" },
-  { title: "blast seed",          href: "/docs#cmd-seed",       section: "Commands",        keywords: "seed populate data run" },
-  { title: "blast run",           href: "/docs#cmd-run",        section: "Commands",        keywords: "run load test rps requests" },
-  { title: "blast stress",        href: "/docs#cmd-stress",     section: "Commands",        keywords: "stress ramp breaking point" },
-  { title: "blast mock",          href: "/docs#cmd-mock",       section: "Commands",        keywords: "mock server local fake api" },
-  { title: "OpenAPI spec config", href: "/docs#configuration",  section: "Configuration",   keywords: "openapi config spec json yaml" },
-  { title: "x-blast extensions",  href: "/docs#extensions",    section: "Configuration",   keywords: "extensions x-blast setup extract weight" },
-  { title: "Fake data",           href: "/docs#fake-data",      section: "Configuration",   keywords: "fake email uuid name password random" },
-  { title: "Tags",                href: "/docs#tags",           section: "Configuration",   keywords: "tags seed run stress check filter" },
-  { title: "Setup phase",         href: "/docs#setup",          section: "Advanced",        keywords: "setup before auth token header" },
-  { title: "Request chaining",    href: "/docs#chaining",       section: "Advanced",        keywords: "extract chain response inject variable" },
-  { title: "Install blast",       href: "/install",             section: "Pages",           keywords: "download binary linux mac windows" },
-  { title: "Changelog",           href: "/changelog",           section: "Pages",           keywords: "changelog release version history" },
+  { title: "Overview",             href: "/docs#overview",      section: "Getting started", keywords: "what is blast introduction" },
+  { title: "Install",              href: "/docs#install",       section: "Getting started", keywords: "install download curl bash" },
+  { title: "Quick start",          href: "/docs#quickstart",    section: "Getting started", keywords: "quick start begin first run" },
+  { title: "blast init",           href: "/docs#cmd-init",      section: "Commands",        keywords: "init create config openapi.json" },
+  { title: "blast validate",       href: "/docs#cmd-validate",  section: "Commands",        keywords: "validate check config load" },
+  { title: "blast check",          href: "/docs#cmd-check",     section: "Commands",        keywords: "check test endpoints once" },
+  { title: "blast seed",           href: "/docs#cmd-seed",      section: "Commands",        keywords: "seed populate data run" },
+  { title: "blast run",            href: "/docs#cmd-run",       section: "Commands",        keywords: "run load test rps requests" },
+  { title: "blast stress",         href: "/docs#cmd-stress",    section: "Commands",        keywords: "stress ramp breaking point" },
+  { title: "blast mock",           href: "/docs#cmd-mock",      section: "Commands",        keywords: "mock server local fake api" },
+  { title: "blast trace",          href: "/docs#cmd-trace",     section: "Commands",        keywords: "trace debug request response inspect" },
+  { title: "blast stage",          href: "/docs#cmd-stage",     section: "Commands",        keywords: "stage multi-stage load pipeline" },
+  { title: "Config file",          href: "/docs#configuration", section: "Configuration",   keywords: "config file base_url headers setup endpoints" },
+  { title: "Endpoint fields",      href: "/docs#extensions",    section: "Configuration",   keywords: "endpoint fields method path body extract assert weight scenario" },
+  { title: "Fake data",            href: "/docs#fake-data",     section: "Configuration",   keywords: "fake email uuid name password random" },
+  { title: "Tags",                 href: "/docs#tags",          section: "Configuration",   keywords: "tags seed run stress check filter" },
+  { title: "Stages",               href: "/docs#stages",        section: "Configuration",   keywords: "stages multi-stage load rps duration" },
+  { title: "Setup phase",          href: "/docs#setup",         section: "Advanced",        keywords: "setup before auth token header" },
+  { title: "Request chaining",     href: "/docs#chaining",      section: "Advanced",        keywords: "extract chain response inject variable" },
+  { title: "Scenarios",            href: "/docs#scenarios",     section: "Advanced",        keywords: "scenario user journey sequence ordered" },
+  { title: "Variable files",       href: "/docs#vars",          section: "Advanced",        keywords: "vars variables file json environment" },
+  { title: "Threshold assertions", href: "/docs#assertions",    section: "Advanced",        keywords: "assert p99 p95 p50 error-rate threshold" },
+  { title: "History",              href: "/docs#history",       section: "Advanced",        keywords: "history diff previous run comparison" },
+  { title: "Install blast",        href: "/install",            section: "Pages",           keywords: "download binary linux mac windows" },
+  { title: "Changelog",            href: "/changelog",          section: "Pages",           keywords: "changelog release version history" },
 ];
 
 function fuzzy(query: string, entry: SearchEntry): boolean {
@@ -50,6 +57,7 @@ export function Search() {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((v) => !v);
+        setQuery("");
       }
       if (e.key === "Escape") setOpen(false);
     }
@@ -58,10 +66,9 @@ export function Search() {
   }, []);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setQuery("");
-    }
+    if (!open) return;
+    const id = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(id);
   }, [open]);
 
   if (!open) return null;

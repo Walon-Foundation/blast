@@ -282,7 +282,7 @@ blast init ./my-api`}</Pre>
 
           <SubSection id="cmd-seed" title="blast seed" mono>
             <P>
-              Runs all endpoints tagged <C>"seed"</C> N times with configurable concurrency. Each iteration
+              Runs all endpoints tagged <C>&quot;seed&quot;</C> N times with configurable concurrency. Each iteration
               is fully independent with its own extraction context. Use this to pre-populate a test
               database before a load test.
             </P>
@@ -299,7 +299,7 @@ blast init ./my-api`}</Pre>
           <SubSection id="cmd-run" title="blast run" mono>
             <P>
               Fixed-RPS load test. Uses a tokio interval ticker to maintain the target request rate.
-              Round-robins over endpoints tagged <C>"run"</C>. Prints live per-second progress and a
+              Round-robins over endpoints tagged <C>&quot;run&quot;</C>. Prints live per-second progress and a
               final summary with p50, p95, p99, and p999 latency percentiles.
             </P>
             <Table
@@ -353,7 +353,7 @@ blast stress --assert "p99<500ms"`}</Pre>
               Response bodies are read from the <C>mock_response</C> field on each endpoint.{" "}
               <C>{"{{fake.*}}"}</C> placeholders are resolved on every request, so each response gets
               fresh data. If no <C>mock_response</C> is defined, the route returns{" "}
-              <C>{"{"}"status": "ok"{"}"}</C> with the declared status code.
+              <C>{'{"status": "ok"}'}</C> with the declared status code.
             </P>
             <Table
               cols={["Flag", "Default", "Description"]}
@@ -642,7 +642,7 @@ POST http://localhost:3000/api/v1/auth/login
         {/* Scenarios */}
         <Section id="scenarios" title="Scenarios">
           <P>
-            Adding <C>scenario: "name"</C> to endpoints groups them into ordered sequences.
+            Adding <C>{'scenario: "name"'}</C> to endpoints groups them into ordered sequences.
             When scenarios are present in the config, <C>blast run</C> executes one full
             scenario sequence per iteration rather than round-robining individual endpoints.
             Each sequence runs with its own local extraction context, so values extracted in
